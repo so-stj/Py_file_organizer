@@ -18,21 +18,33 @@ from typing import Dict, List, Tuple, Optional
 
 class FileOrganizer:
     def __init__(self):
+        print("アプリケーション初期化開始")
         self.root = tk.Tk()
         self.root.geometry("1000x700")
         self.root.configure(bg='#f0f0f0')
         
         # Configuration file
-        self.config_file = "file_organizer_config.json"
-        self.load_config()
+        # Use user's app data directory on Windows, current directory on other platforms
+        if os.name == 'nt':  # Windows
+            app_data_dir = os.path.join(os.path.expanduser('~'), 'AppData', 'Local', 'FileOrganizer')
+            os.makedirs(app_data_dir, exist_ok=True)
+            self.config_file = os.path.join(app_data_dir, "file_organizer_config.json")
+        else:  # Linux/Mac
+            self.config_file = "file_organizer_config.json"
+        print(f"設定ファイルパス: {self.config_file}")
         
-        # Language settings
-        self.current_language = self.config.get("language", "ja")
+        # Setup language first
         self.setup_language()
+        
+        # Load config after language setup
+        self.load_config()
         
         # Check if this is first run and show language selection
         if not self.config.get("language_selected", False):
+            print("初回起動: 言語選択ダイアログを表示")
             self.show_language_selection()
+        else:
+            print("既存の設定を使用")
         
         # Update file types based on current language
         self.update_file_types_for_language()
@@ -48,9 +60,13 @@ class FileOrganizer:
         
         self.setup_ui()
         self.load_recent_directories()
+        print("アプリケーション初期化完了")
     
     def setup_language(self):
         """Setup language dictionaries"""
+        # Initialize current language (will be updated after config load)
+        self.current_language = "ja"
+        
         # File type categories for different languages
         self.file_type_categories = {
             "ja": {
@@ -164,6 +180,17 @@ class FileOrganizer:
                 "swedish": "Svenska",
                 "select_language": "言語選択",
                 "restart_required": "言語を変更するにはアプリケーションを再起動してください。",
+                "maintenance": "メンテナンス",
+                "clear_cache": "キャッシュクリア",
+                "reset_to_defaults": "初期化",
+                "reset_language_selection": "言語選択リセット",
+                "clear_cache_desc": "キャッシュクリア: 最近使用したディレクトリをクリア",
+                "reset_defaults_desc": "初期化: すべての設定をデフォルトに戻す",
+                "reset_language_desc": "言語選択リセット: 次回起動時に言語選択ダイアログを表示",
+                "confirm_clear_cache": "最近使用したディレクトリをクリアしますか？",
+                "confirm_reset_defaults": "すべての設定を初期化しますか？\nこの操作は元に戻せません。",
+                "cache_cleared": "キャッシュをクリアしました。",
+                "settings_reset": "設定を初期化しました。\nアプリケーションを再起動してください。",
                 "other": "その他"
             },
             "en": {
@@ -241,6 +268,17 @@ class FileOrganizer:
                 "swedish": "Svenska",
                 "select_language": "Select Language",
                 "restart_required": "Please restart the application to change language.",
+                "maintenance": "Maintenance",
+                "clear_cache": "Clear Cache",
+                "reset_to_defaults": "Reset to Defaults",
+                "reset_language_selection": "Reset Language Selection",
+                "clear_cache_desc": "Clear Cache: Clear recent directories",
+                "reset_defaults_desc": "Reset to Defaults: Reset all settings to defaults",
+                "reset_language_desc": "Reset Language Selection: Show language selection dialog on next startup",
+                "confirm_clear_cache": "Clear recent directories?",
+                "confirm_reset_defaults": "Reset all settings to defaults?\nThis action cannot be undone.",
+                "cache_cleared": "Cache cleared.",
+                "settings_reset": "Settings reset to defaults.\nPlease restart the application.",
                 "other": "Other"
             },
             "sv": {
@@ -318,6 +356,17 @@ class FileOrganizer:
                 "swedish": "Svenska",
                 "select_language": "Välj språk",
                 "restart_required": "Starta om applikationen för att ändra språk.",
+                "maintenance": "Underhåll",
+                "clear_cache": "Rensa cache",
+                "reset_to_defaults": "Återställ till standard",
+                "reset_language_selection": "Återställ språkval",
+                "clear_cache_desc": "Rensa cache: Rensa nyligen använda kataloger",
+                "reset_defaults_desc": "Återställ till standard: Återställ alla inställningar till standard",
+                "reset_language_desc": "Återställ språkval: Visa språkvalsdialog vid nästa start",
+                "confirm_clear_cache": "Rensa nyligen använda kataloger?",
+                "confirm_reset_defaults": "Återställ alla inställningar till standard?\nDenna åtgärd kan inte ångras.",
+                "cache_cleared": "Cache rensad.",
+                "settings_reset": "Inställningar återställda till standard.\nStarta om applikationen.",
                 "other": "Övrigt"
             }
         }
@@ -395,10 +444,18 @@ class FileOrganizer:
         
         def confirm_language():
             selected_language = self.language_var.get()
+            print(f"選択された言語: {selected_language}")
             self.current_language = selected_language
             self.config["language"] = selected_language
             self.config["language_selected"] = True
+            
+            # Update file types for selected language
+            print("選択した言語のファイルタイプを更新中...")
+            self.update_file_types_for_language()
+            
+            print("設定ファイルを保存中...")
             self.save_config()
+            print("設定ファイル保存完了")
             dialog.destroy()
             # Update window title
             self.root.title(self.get_text("app_title"))
@@ -408,12 +465,39 @@ class FileOrganizer:
         # Make dialog modal
         dialog.wait_window()
     
+
+    
     def update_file_types_for_language(self):
         """Update file types based on current language"""
         if self.current_language in self.file_type_categories:
-            # Only update if file_types is empty or if language changed
-            if not self.config["file_types"] or self.config.get("language") != self.current_language:
-                self.config["file_types"] = self.file_type_categories[self.current_language].copy()
+            print(f"言語 '{self.current_language}' のファイルタイプを更新中...")
+            
+            # Get default file types for current language
+            default_file_types = self.file_type_categories[self.current_language].copy()
+            print(f"デフォルトカテゴリー: {list(default_file_types.keys())}")
+            
+            # If there are existing custom file types, merge them
+            if self.config.get("file_types"):
+                # Find custom categories (not in default)
+                custom_categories = {}
+                for category, extensions in self.config["file_types"].items():
+                    if category not in default_file_types:
+                        custom_categories[category] = extensions
+                
+                print(f"保持するカスタムカテゴリー: {list(custom_categories.keys())}")
+                
+                # Merge default and custom
+                self.config["file_types"] = default_file_types.copy()
+                self.config["file_types"].update(custom_categories)
+            else:
+                # First time, just use default
+                self.config["file_types"] = default_file_types
+                print("初回起動: デフォルトカテゴリーのみ設定")
+            
+            print(f"更新後のカテゴリー: {list(self.config['file_types'].keys())}")
+            
+            # Save configuration
+            self.save_config()
     
     def load_config(self):
         """Load configuration file"""
@@ -432,14 +516,53 @@ class FileOrganizer:
                 with open(self.config_file, 'r', encoding='utf-8') as f:
                     saved_config = json.load(f)
                     self.config.update(saved_config)
-            except:
-                pass
+                print(f"設定ファイルを読み込みました: {self.config_file}")
+                print(f"読み込まれたカテゴリー数: {len(self.config.get('file_types', {}))}")
+            except Exception as e:
+                print(f"設定ファイルの読み込みエラー: {e}")
+        
+        # Set current language from config
+        self.current_language = self.config.get("language", "ja")
+        
+        # Update file types based on current language after loading config
+        if self.current_language in self.file_type_categories:
+            # Only update if file_types is empty (first run)
+            if not self.config.get("file_types"):
+                self.config["file_types"] = self.file_type_categories[self.current_language].copy()
+                print("初回起動: デフォルトカテゴリーを設定")
+            else:
+                # Preserve existing categories and merge with defaults
+                existing_file_types = self.config.get("file_types", {})
+                default_file_types = self.file_type_categories[self.current_language].copy()
+                
+                print(f"既存のカテゴリー: {list(existing_file_types.keys())}")
+                print(f"デフォルトカテゴリー: {list(default_file_types.keys())}")
+                
+                # Find custom categories (not in default)
+                custom_categories = {}
+                for category, extensions in existing_file_types.items():
+                    if category not in default_file_types:
+                        custom_categories[category] = extensions
+                
+                print(f"カスタムカテゴリー: {list(custom_categories.keys())}")
+                
+                # Merge default and custom
+                merged_file_types = default_file_types.copy()
+                merged_file_types.update(custom_categories)
+                self.config["file_types"] = merged_file_types
+                
+                print(f"マージ後のカテゴリー: {list(self.config['file_types'].keys())}")
+        
+        # Mark config as loaded
+        self.config_loaded = True
     
     def save_config(self):
         """Save configuration file"""
         try:
             with open(self.config_file, 'w', encoding='utf-8') as f:
                 json.dump(self.config, f, ensure_ascii=False, indent=2)
+            print(f"設定ファイルを保存しました: {self.config_file}")
+            print(f"保存されたカテゴリー数: {len(self.config.get('file_types', {}))}")
         except Exception as e:
             print(f"{self.get_text('error_config_save')} {e}")
     
@@ -583,8 +706,9 @@ class FileOrganizer:
     
     def load_recent_directories(self):
         """Load recently used directories"""
-        if self.config["recent_directories"]:
-            self.source_directory.set(self.config["recent_directories"][0])
+        # Don't automatically set source directory on startup
+        # Leave it empty for user to choose
+        pass
     
     def start_auto_organize(self):
         """Start auto organization"""
@@ -838,6 +962,9 @@ class SettingsWindow:
         
         # Language settings
         self.create_language_tab(notebook)
+        
+        # Maintenance settings
+        self.create_maintenance_tab(notebook)
     
     def create_file_types_tab(self, notebook):
         """Create file types settings tab"""
@@ -917,18 +1044,77 @@ class SettingsWindow:
                        value="sv").pack(anchor=tk.W)
         
         # Save button
-        ttk.Button(frame, text=self.get_text("save"), command=self.save_language_settings).pack(pady=(20, 10))
+        ttk.Button(frame, text=self.get_text("save"), command=self.save_language_settings).pack(pady=20)
+    
+    def create_maintenance_tab(self, notebook):
+        """Create maintenance settings tab"""
+        frame = ttk.Frame(notebook)
+        notebook.add(frame, text=self.get_text("maintenance"))
         
-        # Reset language selection button
-        ttk.Button(frame, text="Reset Language Selection / 言語選択をリセット", 
-                  command=self.reset_language_selection).pack(pady=(0, 20))
+        # Maintenance options
+        maint_frame = ttk.LabelFrame(frame, text=self.get_text("maintenance"), padding="10")
+        maint_frame.pack(fill=tk.X, padx=10, pady=10)
+        
+        # Clear cache button
+        ttk.Button(maint_frame, text=self.get_text("clear_cache"), 
+                  command=self.clear_cache).pack(anchor=tk.W, pady=5)
+        
+        # Reset to defaults button
+        ttk.Button(maint_frame, text=self.get_text("reset_to_defaults"), 
+                  command=self.reset_to_defaults).pack(anchor=tk.W, pady=5)
+        
+        # Description
+        desc_label = ttk.Label(frame, text=f"{self.get_text('clear_cache_desc')}\n{self.get_text('reset_defaults_desc')}", 
+                              justify=tk.LEFT)
+        desc_label.pack(pady=10)
+    
+    def clear_cache(self):
+        """Clear cache (recent directories)"""
+        if messagebox.askyesno("Confirm", self.get_text("confirm_clear_cache")):
+            self.config["recent_directories"] = []
+            self.save_callback()
+            messagebox.showinfo("Info", self.get_text("cache_cleared"))
+    
+    def reset_to_defaults(self):
+        """Reset all settings to defaults"""
+        if messagebox.askyesno("Confirm", self.get_text("confirm_reset_defaults")):
+            print("初期化を実行中...")
+            
+            # Reset to default configuration
+            self.config = {
+                "file_types": {},
+                "recent_directories": [],
+                "auto_organize": True,
+                "create_date_folders": True,
+                "move_duplicates": True,
+                "language": "ja",
+                "language_selected": False
+            }
+            
+            # Also reset app instance settings
+            if self.app_instance:
+                self.app_instance.current_language = "ja"
+                # Reset app instance file types to default
+                if "ja" in self.app_instance.file_type_categories:
+                    self.app_instance.file_type_categories["ja"] = self.app_instance.file_type_categories["ja"].copy()
+            
+            self.save_callback()
+            print("初期化完了: 設定ファイルを保存しました")
+            messagebox.showinfo("Info", self.get_text("settings_reset"))
+            
+            # Close settings window to force restart
+            self.window.destroy()
     
     def load_file_types(self):
         """Load file types into tree view"""
         for item in self.tree.get_children():
             self.tree.delete(item)
         
-        for category, extensions in self.config["file_types"].items():
+        # Always use config file types to show all categories including custom ones
+        file_types = self.config["file_types"]
+        print(f"設定画面で表示するカテゴリー: {list(file_types.keys())}")
+        
+        for category, extensions in file_types.items():
             item = self.tree.insert("", tk.END, text=category, values=(category, ", ".join(extensions)))
             for ext in extensions:
                 self.tree.insert(item, tk.END, text=ext, values=("", ext))
@@ -938,8 +1124,19 @@ class SettingsWindow:
         dialog = FileTypeDialog(self.window, self.get_text("new_file_type"), app_instance=self.app_instance)
         if dialog.result:
             category, extensions = dialog.result
+            print(f"カテゴリー追加: {category} - {extensions}")
+            
+            # Update config file types
             self.config["file_types"][category] = extensions
+            
+            # Also update the app instance file types
+            if self.app_instance and self.app_instance.current_language in self.app_instance.file_type_categories:
+                self.app_instance.file_type_categories[self.app_instance.current_language][category] = extensions
+            
             self.load_file_types()
+            # Save the configuration
+            self.save_callback()
+            print(f"追加後のカテゴリー数: {len(self.config['file_types'])}")
     
     def edit_file_type(self):
         """Edit file type"""
@@ -957,8 +1154,17 @@ class SettingsWindow:
                 new_category, new_extensions = dialog.result
                 if new_category != category:
                     del self.config["file_types"][category]
+                    # Also update the app instance file types
+                    if self.app_instance and self.app_instance.current_language in self.app_instance.file_type_categories:
+                        if category in self.app_instance.file_type_categories[self.app_instance.current_language]:
+                            del self.app_instance.file_type_categories[self.app_instance.current_language][category]
                 self.config["file_types"][new_category] = new_extensions
+                # Also update the app instance file types
+                if self.app_instance and self.app_instance.current_language in self.app_instance.file_type_categories:
+                    self.app_instance.file_type_categories[self.app_instance.current_language][new_category] = new_extensions
                 self.load_file_types()
+                # Save the configuration
+                self.save_callback()
     
     def delete_file_type(self):
         """Delete file type"""
@@ -972,7 +1178,13 @@ class SettingsWindow:
         if category in self.config["file_types"]:
             if messagebox.askyesno("Confirm", f"{self.get_text('confirm_delete_category')} '{category}' {self.get_text('confirm_delete_question')}"):
                 del self.config["file_types"][category]
+                # Also update the app instance file types
+                if self.app_instance and self.app_instance.current_language in self.app_instance.file_type_categories:
+                    if category in self.app_instance.file_type_categories[self.app_instance.current_language]:
+                        del self.app_instance.file_type_categories[self.app_instance.current_language][category]
                 self.load_file_types()
+                # Save the configuration
+                self.save_callback()
     
     def save_settings(self):
         """Save settings"""
@@ -988,7 +1200,26 @@ class SettingsWindow:
         """Save language settings"""
         new_language = self.language_var.get()
         if new_language != self.config.get("language", "ja"):
+            # Store current custom categories before language change
+            current_file_types = self.config.get("file_types", {})
+            custom_categories = {}
+            
+            # Find custom categories (not in default for current language)
+            if self.app_instance and self.app_instance.current_language in self.app_instance.file_type_categories:
+                default_categories = self.app_instance.file_type_categories[self.app_instance.current_language]
+                for category, extensions in current_file_types.items():
+                    if category not in default_categories:
+                        custom_categories[category] = extensions
+            
             self.config["language"] = new_language
+            
+            # Update file types for new language, preserving custom categories
+            if self.app_instance and new_language in self.app_instance.file_type_categories:
+                new_default_types = self.app_instance.file_type_categories[new_language].copy()
+                # Merge with custom categories
+                new_default_types.update(custom_categories)
+                self.config["file_types"] = new_default_types
+            
             self.save_callback()
             if self.app_instance:
                 self.app_instance.change_language(new_language)
@@ -996,12 +1227,7 @@ class SettingsWindow:
                 messagebox.showinfo("Info", self.get_text("restart_required"))
         self.window.destroy()
     
-    def reset_language_selection(self):
-        """Reset language selection to show dialog on next startup"""
-        if messagebox.askyesno("Confirm", "言語選択をリセットしますか？\n次回起動時に言語選択ダイアログが表示されます。\n\nReset language selection?\nLanguage selection dialog will appear on next startup."):
-            self.config["language_selected"] = False
-            self.save_callback()
-            messagebox.showinfo("Info", "言語選択がリセットされました。\n次回起動時に言語選択ダイアログが表示されます。\n\nLanguage selection has been reset.\nLanguage selection dialog will appear on next startup.")
+
 
 
 class FileTypeDialog:
