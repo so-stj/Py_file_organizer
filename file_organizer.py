@@ -168,6 +168,13 @@ class FileOrganizer:
                 "swedish": "Svenska",
                 "select_language": "言語選択",
                 "restart_required": "言語を変更するにはアプリケーションを再起動してください。",
+                "maintenance": "メンテナンス",
+                "clear_cache": "キャッシュクリア",
+                "reset_to_defaults": "初期化",
+                "reset_language_selection": "言語選択リセット",
+                "clear_cache_desc": "キャッシュクリア: 最近使用したディレクトリをクリア",
+                "reset_defaults_desc": "初期化: すべての設定をデフォルトに戻す",
+                "reset_language_desc": "言語選択リセット: 次回起動時に言語選択ダイアログを表示",
                 "other": "その他"
             },
             "en": {
@@ -245,6 +252,13 @@ class FileOrganizer:
                 "swedish": "Svenska",
                 "select_language": "Select Language",
                 "restart_required": "Please restart the application to change language.",
+                "maintenance": "Maintenance",
+                "clear_cache": "Clear Cache",
+                "reset_to_defaults": "Reset to Defaults",
+                "reset_language_selection": "Reset Language Selection",
+                "clear_cache_desc": "Clear Cache: Clear recent directories",
+                "reset_defaults_desc": "Reset to Defaults: Reset all settings to defaults",
+                "reset_language_desc": "Reset Language Selection: Show language selection dialog on next startup",
                 "other": "Other"
             },
             "sv": {
@@ -322,6 +336,13 @@ class FileOrganizer:
                 "swedish": "Svenska",
                 "select_language": "Välj språk",
                 "restart_required": "Starta om applikationen för att ändra språk.",
+                "maintenance": "Underhåll",
+                "clear_cache": "Rensa cache",
+                "reset_to_defaults": "Återställ till standard",
+                "reset_language_selection": "Återställ språkval",
+                "clear_cache_desc": "Rensa cache: Rensa nyligen använda kataloger",
+                "reset_defaults_desc": "Återställ till standard: Återställ alla inställningar till standard",
+                "reset_language_desc": "Återställ språkval: Visa språkvalsdialog vid nästa start",
                 "other": "Övrigt"
             }
         }
@@ -435,8 +456,9 @@ class FileOrganizer:
                 # First time, just use default
                 self.config["file_types"] = default_file_types
             
-            # Save the configuration to persist changes
-            self.save_config()
+            # Only save if this is not the initial load
+            if hasattr(self, 'config_loaded'):
+                self.save_config()
     
     def load_config(self):
         """Load configuration file"""
@@ -463,7 +485,22 @@ class FileOrganizer:
         
         # Update file types based on current language after loading config
         if self.current_language in self.file_type_categories:
-            self.config["file_types"] = self.file_type_categories[self.current_language].copy()
+            # Preserve existing custom categories when loading config
+            existing_file_types = self.config.get("file_types", {})
+            default_file_types = self.file_type_categories[self.current_language].copy()
+            
+            # Find custom categories (not in default)
+            custom_categories = {}
+            for category, extensions in existing_file_types.items():
+                if category not in default_file_types:
+                    custom_categories[category] = extensions
+            
+            # Merge default and custom
+            self.config["file_types"] = default_file_types.copy()
+            self.config["file_types"].update(custom_categories)
+        
+        # Mark config as loaded
+        self.config_loaded = True
     
     def save_config(self):
         """Save configuration file"""
@@ -956,26 +993,22 @@ class SettingsWindow:
     def create_maintenance_tab(self, notebook):
         """Create maintenance settings tab"""
         frame = ttk.Frame(notebook)
-        notebook.add(frame, text="メンテナンス")
+        notebook.add(frame, text=self.get_text("maintenance"))
         
         # Maintenance options
-        maint_frame = ttk.LabelFrame(frame, text="メンテナンス", padding="10")
+        maint_frame = ttk.LabelFrame(frame, text=self.get_text("maintenance"), padding="10")
         maint_frame.pack(fill=tk.X, padx=10, pady=10)
         
         # Clear cache button
-        ttk.Button(maint_frame, text="キャッシュクリア / Clear Cache", 
+        ttk.Button(maint_frame, text=self.get_text("clear_cache"), 
                   command=self.clear_cache).pack(anchor=tk.W, pady=5)
         
         # Reset to defaults button
-        ttk.Button(maint_frame, text="初期化 / Reset to Defaults", 
+        ttk.Button(maint_frame, text=self.get_text("reset_to_defaults"), 
                   command=self.reset_to_defaults).pack(anchor=tk.W, pady=5)
         
-        # Reset language selection button
-        ttk.Button(maint_frame, text="言語選択リセット / Reset Language Selection", 
-                  command=self.reset_language_selection).pack(anchor=tk.W, pady=5)
-        
         # Description
-        desc_label = ttk.Label(frame, text="キャッシュクリア: 最近使用したディレクトリをクリア\n初期化: すべての設定をデフォルトに戻す\n言語選択リセット: 次回起動時に言語選択ダイアログを表示", 
+        desc_label = ttk.Label(frame, text=f"{self.get_text('clear_cache_desc')}\n{self.get_text('reset_defaults_desc')}", 
                               justify=tk.LEFT)
         desc_label.pack(pady=10)
     
@@ -1001,13 +1034,6 @@ class SettingsWindow:
             }
             self.save_callback()
             messagebox.showinfo("Info", "設定を初期化しました。\nアプリケーションを再起動してください。\n\nSettings reset to defaults.\nPlease restart the application.")
-    
-    def reset_language_selection(self):
-        """Reset language selection to show dialog on next startup"""
-        if messagebox.askyesno("Confirm", "言語選択をリセットしますか？\n次回起動時に言語選択ダイアログが表示されます。\n\nReset language selection?\nLanguage selection dialog will appear on next startup."):
-            self.config["language_selected"] = False
-            self.save_callback()
-            messagebox.showinfo("Info", "言語選択がリセットされました。\n次回起動時に言語選択ダイアログが表示されます。\n\nLanguage selection has been reset.\nLanguage selection dialog will appear on next startup.")
     
     def load_file_types(self):
         """Load file types into tree view"""
