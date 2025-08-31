@@ -609,7 +609,6 @@ class FileOrganizer:
 class SettingsWindow:
     def __init__(self, parent, config, save_callback, app_instance=None):
         self.window = tk.Toplevel(parent)
-        self.window.title("設定")
         self.window.geometry("600x500")
         self.window.transient(parent)
         self.window.grab_set()
@@ -618,7 +617,18 @@ class SettingsWindow:
         self.save_callback = save_callback
         self.app_instance = app_instance
         
+        # Get current language from app instance
+        self.current_language = app_instance.current_language if app_instance else "ja"
+        self.languages = app_instance.languages if app_instance else {}
+        
+        # Set window title after language setup
+        self.window.title(self.get_text("settings"))
+        
         self.setup_ui()
+    
+    def get_text(self, key: str) -> str:
+        """Get text in current language"""
+        return self.languages.get(self.current_language, {}).get(key, key)
     
     def setup_ui(self):
         """Build settings UI"""
@@ -637,17 +647,17 @@ class SettingsWindow:
     def create_file_types_tab(self, notebook):
         """Create file types settings tab"""
         frame = ttk.Frame(notebook)
-        notebook.add(frame, text="ファイルタイプ")
+        notebook.add(frame, text=self.get_text("file_types"))
         
         # File types list
         list_frame = ttk.Frame(frame)
         list_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
         # Tree view
-        columns = ("カテゴリ", "拡張子")
+        columns = (self.get_text("category"), self.get_text("extensions"))
         self.tree = ttk.Treeview(list_frame, columns=columns, show="tree headings")
-        self.tree.heading("カテゴリ", text="カテゴリ")
-        self.tree.heading("拡張子", text="拡張子")
+        self.tree.heading(self.get_text("category"), text=self.get_text("category"))
+        self.tree.heading(self.get_text("extensions"), text=self.get_text("extensions"))
         self.tree.pack(fill=tk.BOTH, expand=True)
         
         # Scrollbar
@@ -659,58 +669,58 @@ class SettingsWindow:
         btn_frame = ttk.Frame(frame)
         btn_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
         
-        ttk.Button(btn_frame, text="追加", command=self.add_file_type).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(btn_frame, text="編集", command=self.edit_file_type).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(btn_frame, text="削除", command=self.delete_file_type).pack(side=tk.LEFT)
+        ttk.Button(btn_frame, text=self.get_text("add"), command=self.add_file_type).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(btn_frame, text=self.get_text("edit"), command=self.edit_file_type).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(btn_frame, text=self.get_text("delete"), command=self.delete_file_type).pack(side=tk.LEFT)
         
         self.load_file_types()
     
     def create_general_tab(self, notebook):
         """Create general settings tab"""
         frame = ttk.Frame(notebook)
-        notebook.add(frame, text="一般設定")
+        notebook.add(frame, text=self.get_text("general_settings"))
         
         # Settings options
-        options_frame = ttk.LabelFrame(frame, text="オプション", padding="10")
+        options_frame = ttk.LabelFrame(frame, text=self.get_text("options"), padding="10")
         options_frame.pack(fill=tk.X, padx=10, pady=10)
         
         # Auto organize
         self.auto_organize_var = tk.BooleanVar(value=self.config["auto_organize"])
-        ttk.Checkbutton(options_frame, text="自動仕分けを有効にする", 
+        ttk.Checkbutton(options_frame, text=self.get_text("enable_auto_organize"), 
                        variable=self.auto_organize_var).pack(anchor=tk.W)
         
         # Create date folders
         self.create_date_folders_var = tk.BooleanVar(value=self.config["create_date_folders"])
-        ttk.Checkbutton(options_frame, text="日付フォルダを作成する", 
+        ttk.Checkbutton(options_frame, text=self.get_text("create_date_folders"), 
                        variable=self.create_date_folders_var).pack(anchor=tk.W)
         
         # Move duplicate files
         self.move_duplicates_var = tk.BooleanVar(value=self.config["move_duplicates"])
-        ttk.Checkbutton(options_frame, text="重複ファイルを自動的にリネームして移動", 
+        ttk.Checkbutton(options_frame, text=self.get_text("auto_rename_duplicates"), 
                        variable=self.move_duplicates_var).pack(anchor=tk.W)
         
         # Save button
-        ttk.Button(frame, text="保存", command=self.save_settings).pack(pady=20)
+        ttk.Button(frame, text=self.get_text("save"), command=self.save_settings).pack(pady=20)
     
     def create_language_tab(self, notebook):
         """Create language settings tab"""
         frame = ttk.Frame(notebook)
-        notebook.add(frame, text="言語設定")
+        notebook.add(frame, text=self.get_text("language"))
         
         # Language options
-        lang_frame = ttk.LabelFrame(frame, text="言語選択", padding="10")
+        lang_frame = ttk.LabelFrame(frame, text=self.get_text("select_language"), padding="10")
         lang_frame.pack(fill=tk.X, padx=10, pady=10)
         
         # Language selection
         self.language_var = tk.StringVar(value=self.config.get("language", "ja"))
         
-        ttk.Radiobutton(lang_frame, text="日本語", variable=self.language_var, 
+        ttk.Radiobutton(lang_frame, text=self.get_text("japanese"), variable=self.language_var, 
                        value="ja").pack(anchor=tk.W)
-        ttk.Radiobutton(lang_frame, text="English", variable=self.language_var, 
+        ttk.Radiobutton(lang_frame, text=self.get_text("english"), variable=self.language_var, 
                        value="en").pack(anchor=tk.W)
         
         # Save button
-        ttk.Button(frame, text="保存", command=self.save_language_settings).pack(pady=20)
+        ttk.Button(frame, text=self.get_text("save"), command=self.save_language_settings).pack(pady=20)
     
     def load_file_types(self):
         """Load file types into tree view"""
@@ -724,7 +734,7 @@ class SettingsWindow:
     
     def add_file_type(self):
         """Add file type"""
-        dialog = FileTypeDialog(self.window, "新しいファイルタイプ")
+        dialog = FileTypeDialog(self.window, self.get_text("new_file_type"), app_instance=self.app_instance)
         if dialog.result:
             category, extensions = dialog.result
             self.config["file_types"][category] = extensions
@@ -734,14 +744,14 @@ class SettingsWindow:
         """Edit file type"""
         selection = self.tree.selection()
         if not selection:
-            messagebox.showwarning("警告", "編集するカテゴリを選択してください。")
+            messagebox.showwarning("Warning", self.get_text("warning_select_category"))
             return
         
         item = self.tree.item(selection[0])
         if item["text"] in self.config["file_types"]:
             category = item["text"]
             extensions = self.config["file_types"][category]
-            dialog = FileTypeDialog(self.window, "ファイルタイプを編集", category, extensions)
+            dialog = FileTypeDialog(self.window, self.get_text("edit_file_type"), category, extensions, app_instance=self.app_instance)
             if dialog.result:
                 new_category, new_extensions = dialog.result
                 if new_category != category:
@@ -753,13 +763,13 @@ class SettingsWindow:
         """Delete file type"""
         selection = self.tree.selection()
         if not selection:
-            messagebox.showwarning("警告", "削除するカテゴリを選択してください。")
+            messagebox.showwarning("Warning", self.get_text("warning_select_delete_category"))
             return
         
         item = self.tree.item(selection[0])
         category = item["text"]
         if category in self.config["file_types"]:
-            if messagebox.askyesno("確認", f"カテゴリ '{category}' を削除しますか？"):
+            if messagebox.askyesno("Confirm", f"{self.get_text('confirm_delete_category')} '{category}' {self.get_text('confirm_delete_question')}"):
                 del self.config["file_types"][category]
                 self.load_file_types()
     
@@ -770,7 +780,7 @@ class SettingsWindow:
         self.config["move_duplicates"] = self.move_duplicates_var.get()
         
         self.save_callback()
-        messagebox.showinfo("完了", "設定を保存しました。")
+        messagebox.showinfo("Complete", self.get_text("settings_saved"))
         self.window.destroy()
     
     def save_language_settings(self):
@@ -782,12 +792,12 @@ class SettingsWindow:
             if self.app_instance:
                 self.app_instance.change_language(new_language)
             else:
-                messagebox.showinfo("Info", "言語を変更するにはアプリケーションを再起動してください。")
+                messagebox.showinfo("Info", self.get_text("restart_required"))
         self.window.destroy()
 
 
 class FileTypeDialog:
-    def __init__(self, parent, title, category="", extensions=None):
+    def __init__(self, parent, title, category="", extensions=None, app_instance=None):
         self.result = None
         
         self.window = tk.Toplevel(parent)
@@ -796,8 +806,22 @@ class FileTypeDialog:
         self.window.transient(parent)
         self.window.grab_set()
         
+        # Get language settings from parent
+        self.current_language = "ja"
+        self.languages = {}
+        if hasattr(parent, 'master') and hasattr(parent.master, 'master'):
+            # Try to get from main app
+            main_app = parent.master.master
+            if hasattr(main_app, 'current_language'):
+                self.current_language = main_app.current_language
+                self.languages = main_app.languages
+        
         self.setup_ui(category, extensions or [])
         self.window.wait_window()
+    
+    def get_text(self, key: str) -> str:
+        """Get text in current language"""
+        return self.languages.get(self.current_language, {}).get(key, key)
     
     def setup_ui(self, category, extensions):
         """Build dialog UI"""
@@ -805,13 +829,13 @@ class FileTypeDialog:
         main_frame.pack(fill=tk.BOTH, expand=True)
         
         # Category name
-        ttk.Label(main_frame, text="カテゴリ名:").pack(anchor=tk.W)
+        ttk.Label(main_frame, text=self.get_text("category_name")).pack(anchor=tk.W)
         self.category_var = tk.StringVar(value=category)
         category_entry = ttk.Entry(main_frame, textvariable=self.category_var, width=40)
         category_entry.pack(fill=tk.X, pady=(0, 10))
         
         # Extensions list
-        ttk.Label(main_frame, text="拡張子 (カンマ区切り):").pack(anchor=tk.W)
+        ttk.Label(main_frame, text=self.get_text("extensions_comma_separated")).pack(anchor=tk.W)
         
         extensions_text = scrolledtext.ScrolledText(main_frame, height=10, width=40)
         extensions_text.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
@@ -822,20 +846,20 @@ class FileTypeDialog:
         btn_frame.pack(fill=tk.X)
         
         ttk.Button(btn_frame, text="OK", command=lambda: self.save(extensions_text)).pack(side=tk.RIGHT, padx=(5, 0))
-        ttk.Button(btn_frame, text="キャンセル", command=self.window.destroy).pack(side=tk.RIGHT)
+        ttk.Button(btn_frame, text="Cancel", command=self.window.destroy).pack(side=tk.RIGHT)
     
     def save(self, extensions_text):
         """Save settings"""
         category = self.category_var.get().strip()
         if not category:
-            messagebox.showerror("エラー", "カテゴリ名を入力してください。")
+            messagebox.showerror("Error", self.get_text("category_name_required"))
             return
         
         extensions_text_content = extensions_text.get(1.0, tk.END).strip()
         extensions = [ext.strip() for ext in extensions_text_content.split(",") if ext.strip()]
         
         if not extensions:
-            messagebox.showerror("エラー", "拡張子を入力してください。")
+            messagebox.showerror("Error", self.get_text("extensions_required"))
             return
         
         # Normalize extension format
