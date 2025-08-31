@@ -1,79 +1,9 @@
 {
-  "file_types": {
-    "画像": [
-      ".jpg",
-      ".jpeg",
-      ".png",
-      ".gif",
-      ".bmp",
-      ".tiff",
-      ".webp"
-    ],
-    "動画": [
-      ".mp4",
-      ".avi",
-      ".mov",
-      ".wmv",
-      ".flv",
-      ".mkv",
-      ".webm"
-    ],
-    "音声": [
-      ".mp3",
-      ".wav",
-      ".flac",
-      ".aac",
-      ".ogg",
-      ".wma"
-    ],
-    "文書": [
-      ".pdf",
-      ".doc",
-      ".docx",
-      ".txt",
-      ".rtf",
-      ".odt"
-    ],
-    "スプレッドシート": [
-      ".xls",
-      ".xlsx",
-      ".csv",
-      ".ods"
-    ],
-    "プレゼンテーション": [
-      ".ppt",
-      ".pptx",
-      ".odp"
-    ],
-    "アーカイブ": [
-      ".zip",
-      ".rar",
-      ".7z",
-      ".tar",
-      ".gz"
-    ],
-    "実行ファイル": [
-      ".exe",
-      ".msi",
-      ".dmg",
-      ".deb",
-      ".rpm"
-    ],
-    "コード": [
-      ".py",
-      ".js",
-      ".html",
-      ".css",
-      ".java",
-      ".cpp",
-      ".c",
-      ".php"
-    ]
-  },
+  "file_types": {},
   "recent_directories": [],
   "auto_organize": true,
   "create_date_folders": true,
   "move_duplicates": true,
   "language": "ja",
-  "language_selected": true
+  "language_selected": false
 }
