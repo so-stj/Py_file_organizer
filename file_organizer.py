@@ -175,6 +175,10 @@ class FileOrganizer:
                 "clear_cache_desc": "キャッシュクリア: 最近使用したディレクトリをクリア",
                 "reset_defaults_desc": "初期化: すべての設定をデフォルトに戻す",
                 "reset_language_desc": "言語選択リセット: 次回起動時に言語選択ダイアログを表示",
+                "confirm_clear_cache": "最近使用したディレクトリをクリアしますか？",
+                "confirm_reset_defaults": "すべての設定を初期化しますか？\nこの操作は元に戻せません。",
+                "cache_cleared": "キャッシュをクリアしました。",
+                "settings_reset": "設定を初期化しました。\nアプリケーションを再起動してください。",
                 "other": "その他"
             },
             "en": {
@@ -259,6 +263,10 @@ class FileOrganizer:
                 "clear_cache_desc": "Clear Cache: Clear recent directories",
                 "reset_defaults_desc": "Reset to Defaults: Reset all settings to defaults",
                 "reset_language_desc": "Reset Language Selection: Show language selection dialog on next startup",
+                "confirm_clear_cache": "Clear recent directories?",
+                "confirm_reset_defaults": "Reset all settings to defaults?\nThis action cannot be undone.",
+                "cache_cleared": "Cache cleared.",
+                "settings_reset": "Settings reset to defaults.\nPlease restart the application.",
                 "other": "Other"
             },
             "sv": {
@@ -343,6 +351,10 @@ class FileOrganizer:
                 "clear_cache_desc": "Rensa cache: Rensa nyligen använda kataloger",
                 "reset_defaults_desc": "Återställ till standard: Återställ alla inställningar till standard",
                 "reset_language_desc": "Återställ språkval: Visa språkvalsdialog vid nästa start",
+                "confirm_clear_cache": "Rensa nyligen använda kataloger?",
+                "confirm_reset_defaults": "Återställ alla inställningar till standard?\nDenna åtgärd kan inte ångras.",
+                "cache_cleared": "Cache rensad.",
+                "settings_reset": "Inställningar återställda till standard.\nStarta om applikationen.",
                 "other": "Övrigt"
             }
         }
@@ -477,8 +489,10 @@ class FileOrganizer:
                 with open(self.config_file, 'r', encoding='utf-8') as f:
                     saved_config = json.load(f)
                     self.config.update(saved_config)
-            except:
-                pass
+                print(f"設定ファイルを読み込みました: {self.config_file}")
+                print(f"読み込まれたカテゴリー数: {len(self.config.get('file_types', {}))}")
+            except Exception as e:
+                print(f"設定ファイルの読み込みエラー: {e}")
         
         # Set current language from config
         self.current_language = self.config.get("language", "ja")
@@ -507,6 +521,8 @@ class FileOrganizer:
         try:
             with open(self.config_file, 'w', encoding='utf-8') as f:
                 json.dump(self.config, f, ensure_ascii=False, indent=2)
+            print(f"設定ファイルを保存しました: {self.config_file}")
+            print(f"保存されたカテゴリー数: {len(self.config.get('file_types', {}))}")
         except Exception as e:
             print(f"{self.get_text('error_config_save')} {e}")
     
@@ -1014,14 +1030,14 @@ class SettingsWindow:
     
     def clear_cache(self):
         """Clear cache (recent directories)"""
-        if messagebox.askyesno("Confirm", "最近使用したディレクトリをクリアしますか？\n\nClear recent directories?"):
+        if messagebox.askyesno("Confirm", self.get_text("confirm_clear_cache")):
             self.config["recent_directories"] = []
             self.save_callback()
-            messagebox.showinfo("Info", "キャッシュをクリアしました。\n\nCache cleared.")
+            messagebox.showinfo("Info", self.get_text("cache_cleared"))
     
     def reset_to_defaults(self):
         """Reset all settings to defaults"""
-        if messagebox.askyesno("Confirm", "すべての設定を初期化しますか？\nこの操作は元に戻せません。\n\nReset all settings to defaults?\nThis action cannot be undone."):
+        if messagebox.askyesno("Confirm", self.get_text("confirm_reset_defaults")):
             # Reset to default configuration
             self.config = {
                 "file_types": {},
@@ -1033,7 +1049,7 @@ class SettingsWindow:
                 "language_selected": False
             }
             self.save_callback()
-            messagebox.showinfo("Info", "設定を初期化しました。\nアプリケーションを再起動してください。\n\nSettings reset to defaults.\nPlease restart the application.")
+            messagebox.showinfo("Info", self.get_text("settings_reset"))
     
     def load_file_types(self):
         """Load file types into tree view"""
