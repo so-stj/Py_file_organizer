@@ -24,11 +24,12 @@ class FileOrganizer:
         
         # Configuration file
         self.config_file = "file_organizer_config.json"
-        self.load_config()
         
-        # Language settings
-        self.current_language = self.config.get("language", "ja")
+        # Setup language first
         self.setup_language()
+        
+        # Load config after language setup
+        self.load_config()
         
         # Check if this is first run and show language selection
         if not self.config.get("language_selected", False):
