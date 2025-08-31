@@ -52,9 +52,8 @@ class FileOrganizer:
             self.show_language_selection()
         else:
             print("Using existing settings")
-        
-        # Update file types based on current language
-        self.update_file_types_for_language()
+            # Only update file types if not in reset mode
+            self.update_file_types_for_language()
         
         # Variables
         self.source_directory = tk.StringVar()
@@ -488,7 +487,7 @@ class FileOrganizer:
                 print("Reset detected: using default categories only")
                 self.config["file_types"] = default_file_types
             elif self.config.get("file_types"):
-                # Find custom categories (not in default)
+                # Normal operation: preserve custom categories
                 custom_categories = {}
                 for category, extensions in self.config["file_types"].items():
                     if category not in default_file_types:
@@ -548,40 +547,35 @@ class FileOrganizer:
         
         # Update file types based on current language after loading config
         if self.current_language in self.file_type_categories:
-            # Check if this is a reset (empty file_types and language_selected is False)
-            if not self.config.get("file_types") and not self.config.get("language_selected", True):
-                print("Post-reset startup: setting default categories")
+            # Check if this is a reset scenario (language_selected is False)
+            if not self.config.get("language_selected", True):
+                print("Reset detected: setting default categories only")
                 self.config["file_types"] = self.file_type_categories[self.current_language].copy()
             elif not self.config.get("file_types"):
                 print("First run: setting default categories")
                 self.config["file_types"] = self.file_type_categories[self.current_language].copy()
             else:
-                # Check if this is a reset scenario (language_selected is False)
-                if not self.config.get("language_selected", True):
-                    print("Reset detected: setting default categories only")
-                    self.config["file_types"] = self.file_type_categories[self.current_language].copy()
-                else:
-                    # Preserve existing categories and merge with defaults
-                    existing_file_types = self.config.get("file_types", {})
-                    default_file_types = self.file_type_categories[self.current_language].copy()
-                    
-                    print(f"Existing categories: {list(existing_file_types.keys())}")
-                    print(f"Default categories: {list(default_file_types.keys())}")
-                    
-                    # Find custom categories (not in default)
-                    custom_categories = {}
-                    for category, extensions in existing_file_types.items():
-                        if category not in default_file_types:
-                            custom_categories[category] = extensions
-                    
-                    print(f"Custom categories: {list(custom_categories.keys())}")
-                    
-                    # Merge default and custom
-                    merged_file_types = default_file_types.copy()
-                    merged_file_types.update(custom_categories)
-                    self.config["file_types"] = merged_file_types
-                    
-                    print(f"Merged categories: {list(self.config['file_types'].keys())}")
+                # Normal operation: preserve existing categories and merge with defaults
+                existing_file_types = self.config.get("file_types", {})
+                default_file_types = self.file_type_categories[self.current_language].copy()
+                
+                print(f"Existing categories: {list(existing_file_types.keys())}")
+                print(f"Default categories: {list(default_file_types.keys())}")
+                
+                # Find custom categories (not in default)
+                custom_categories = {}
+                for category, extensions in existing_file_types.items():
+                    if category not in default_file_types:
+                        custom_categories[category] = extensions
+                
+                print(f"Custom categories: {list(custom_categories.keys())}")
+                
+                # Merge default and custom
+                merged_file_types = default_file_types.copy()
+                merged_file_types.update(custom_categories)
+                self.config["file_types"] = merged_file_types
+                
+                print(f"Merged categories: {list(self.config['file_types'].keys())}")
         
         # Mark config as loaded
         self.config_loaded = True
