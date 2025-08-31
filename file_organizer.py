@@ -18,12 +18,14 @@ from typing import Dict, List, Tuple, Optional
 
 class FileOrganizer:
     def __init__(self):
+        print("アプリケーション初期化開始")
         self.root = tk.Tk()
         self.root.geometry("1000x700")
         self.root.configure(bg='#f0f0f0')
         
         # Configuration file
         self.config_file = "file_organizer_config.json"
+        print(f"設定ファイルパス: {self.config_file}")
         
         # Setup language first
         self.setup_language()
@@ -33,7 +35,10 @@ class FileOrganizer:
         
         # Check if this is first run and show language selection
         if not self.config.get("language_selected", False):
+            print("初回起動: 言語選択ダイアログを表示")
             self.show_language_selection()
+        else:
+            print("既存の設定を使用")
         
         # Update file types based on current language
         self.update_file_types_for_language()
@@ -49,6 +54,7 @@ class FileOrganizer:
         
         self.setup_ui()
         self.load_recent_directories()
+        print("アプリケーション初期化完了")
     
     def setup_language(self):
         """Setup language dictionaries"""
@@ -432,10 +438,13 @@ class FileOrganizer:
         
         def confirm_language():
             selected_language = self.language_var.get()
+            print(f"選択された言語: {selected_language}")
             self.current_language = selected_language
             self.config["language"] = selected_language
             self.config["language_selected"] = True
+            print("設定ファイルを保存中...")
             self.save_config()
+            print("設定ファイル保存完了")
             dialog.destroy()
             # Update window title
             self.root.title(self.get_text("app_title"))
