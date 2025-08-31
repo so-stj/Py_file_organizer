@@ -31,6 +31,10 @@ class FileOrganizer:
         # Load config after language setup
         self.load_config()
         
+        # Check if this is first run and show language selection
+        if not self.config.get("language_selected", False):
+            self.show_language_selection()
+        
         # Update file types based on current language
         self.update_file_types_for_language()
         
@@ -357,6 +361,9 @@ class FileOrganizer:
             else:
                 # First time, just use default
                 self.config["file_types"] = default_file_types
+            
+            # Save the configuration to persist changes
+            self.save_config()
     
     def load_config(self):
         """Load configuration file"""
@@ -366,7 +373,8 @@ class FileOrganizer:
             "auto_organize": True,
             "create_date_folders": True,
             "move_duplicates": True,
-            "language": "ja"
+            "language": "ja",
+            "language_selected": False
         }
         
         if os.path.exists(self.config_file):
@@ -788,6 +796,9 @@ class SettingsWindow:
         
         # Language settings
         self.create_language_tab(notebook)
+        
+        # Maintenance settings
+        self.create_maintenance_tab(notebook)
     
     def create_file_types_tab(self, notebook):
         """Create file types settings tab"""
@@ -868,6 +879,62 @@ class SettingsWindow:
         
         # Save button
         ttk.Button(frame, text=self.get_text("save"), command=self.save_language_settings).pack(pady=20)
+    
+    def create_maintenance_tab(self, notebook):
+        """Create maintenance settings tab"""
+        frame = ttk.Frame(notebook)
+        notebook.add(frame, text="メンテナンス")
+        
+        # Maintenance options
+        maint_frame = ttk.LabelFrame(frame, text="メンテナンス", padding="10")
+        maint_frame.pack(fill=tk.X, padx=10, pady=10)
+        
+        # Clear cache button
+        ttk.Button(maint_frame, text="キャッシュクリア / Clear Cache", 
+                  command=self.clear_cache).pack(anchor=tk.W, pady=5)
+        
+        # Reset to defaults button
+        ttk.Button(maint_frame, text="初期化 / Reset to Defaults", 
+                  command=self.reset_to_defaults).pack(anchor=tk.W, pady=5)
+        
+        # Reset language selection button
+        ttk.Button(maint_frame, text="言語選択リセット / Reset Language Selection", 
+                  command=self.reset_language_selection).pack(anchor=tk.W, pady=5)
+        
+        # Description
+        desc_label = ttk.Label(frame, text="キャッシュクリア: 最近使用したディレクトリをクリア\n初期化: すべての設定をデフォルトに戻す\n言語選択リセット: 次回起動時に言語選択ダイアログを表示", 
+                              justify=tk.LEFT)
+        desc_label.pack(pady=10)
+    
+    def clear_cache(self):
+        """Clear cache (recent directories)"""
+        if messagebox.askyesno("Confirm", "最近使用したディレクトリをクリアしますか？\n\nClear recent directories?"):
+            self.config["recent_directories"] = []
+            self.save_callback()
+            messagebox.showinfo("Info", "キャッシュをクリアしました。\n\nCache cleared.")
+    
+    def reset_to_defaults(self):
+        """Reset all settings to defaults"""
+        if messagebox.askyesno("Confirm", "すべての設定を初期化しますか？\nこの操作は元に戻せません。\n\nReset all settings to defaults?\nThis action cannot be undone."):
+            # Reset to default configuration
+            self.config = {
+                "file_types": {},
+                "recent_directories": [],
+                "auto_organize": True,
+                "create_date_folders": True,
+                "move_duplicates": True,
+                "language": "ja",
+                "language_selected": False
+            }
+            self.save_callback()
+            messagebox.showinfo("Info", "設定を初期化しました。\nアプリケーションを再起動してください。\n\nSettings reset to defaults.\nPlease restart the application.")
+    
+    def reset_language_selection(self):
+        """Reset language selection to show dialog on next startup"""
+        if messagebox.askyesno("Confirm", "言語選択をリセットしますか？\n次回起動時に言語選択ダイアログが表示されます。\n\nReset language selection?\nLanguage selection dialog will appear on next startup."):
+            self.config["language_selected"] = False
+            self.save_callback()
+            messagebox.showinfo("Info", "言語選択がリセットされました。\n次回起動時に言語選択ダイアログが表示されます。\n\nLanguage selection has been reset.\nLanguage selection dialog will appear on next startup.")
     
     def load_file_types(self):
         """Load file types into tree view"""
@@ -986,7 +1053,78 @@ class SettingsWindow:
                 messagebox.showinfo("Info", self.get_text("restart_required"))
         self.window.destroy()
     
-
+    def show_language_selection(self):
+        """Show language selection dialog on first run"""
+        # Create language selection dialog
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Language Selection / 言語選択")
+        dialog.geometry("400x300")
+        dialog.transient(self.root)
+        dialog.grab_set()
+        dialog.resizable(False, False)
+        
+        # Center the dialog
+        dialog.update_idletasks()
+        x = (dialog.winfo_screenwidth() // 2) - (400 // 2)
+        y = (dialog.winfo_screenheight() // 2) - (300 // 2)
+        dialog.geometry(f"400x300+{x}+{y}")
+        
+        # Main frame
+        main_frame = ttk.Frame(dialog, padding="20")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Title
+        title_label = ttk.Label(main_frame, text="Select your preferred language\nお好みの言語を選択してください", 
+                               justify=tk.CENTER)
+        title_label.pack(pady=(0, 20))
+        
+        # Language selection
+        self.language_var = tk.StringVar(value=self.current_language)
+        
+        # Japanese option
+        ja_frame = ttk.Frame(main_frame)
+        ja_frame.pack(fill=tk.X, pady=5)
+        ttk.Radiobutton(ja_frame, text="日本語", variable=self.language_var, 
+                       value="ja").pack(side=tk.LEFT)
+        ttk.Label(ja_frame, text="Japanese").pack(side=tk.LEFT, padx=(10, 0))
+        
+        # English option
+        en_frame = ttk.Frame(main_frame)
+        en_frame.pack(fill=tk.X, pady=5)
+        ttk.Radiobutton(en_frame, text="English", variable=self.language_var, 
+                       value="en").pack(side=tk.LEFT)
+        ttk.Label(en_frame, text="英語").pack(side=tk.LEFT, padx=(10, 0))
+        
+        # Swedish option
+        sv_frame = ttk.Frame(main_frame)
+        sv_frame.pack(fill=tk.X, pady=5)
+        ttk.Radiobutton(sv_frame, text="Svenska", variable=self.language_var, 
+                       value="sv").pack(side=tk.LEFT)
+        ttk.Label(sv_frame, text="スウェーデン語").pack(side=tk.LEFT, padx=(10, 0))
+        
+        # Description
+        desc_label = ttk.Label(main_frame, text="You can change the language later in Settings.\n後で設定から言語を変更できます。", 
+                              justify=tk.CENTER)
+        desc_label.pack(pady=(20, 0))
+        
+        # Buttons
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(fill=tk.X, pady=(20, 0))
+        
+        def confirm_language():
+            selected_language = self.language_var.get()
+            self.current_language = selected_language
+            self.config["language"] = selected_language
+            self.config["language_selected"] = True
+            self.save_config()
+            dialog.destroy()
+            # Update window title
+            self.root.title(self.get_text("app_title"))
+        
+        ttk.Button(btn_frame, text="OK / 決定", command=confirm_language).pack(side=tk.RIGHT)
+        
+        # Make dialog modal
+        dialog.wait_window()
 
 
 class FileTypeDialog:
