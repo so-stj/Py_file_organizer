@@ -593,8 +593,9 @@ class FileOrganizer:
     
     def load_recent_directories(self):
         """Load recently used directories"""
-        if self.config["recent_directories"]:
-            self.source_directory.set(self.config["recent_directories"][0])
+        # Don't automatically set source directory on startup
+        # Leave it empty for user to choose
+        pass
     
     def start_auto_organize(self):
         """Start auto organization"""
