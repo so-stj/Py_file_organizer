@@ -112,7 +112,7 @@ class FileOrganizer:
         
         self.languages = {
             "ja": {
-                "app_title": "ファイル仕分けシステム",
+                "app_title": "ファイル自動整理アプリ",
                 "directory_settings": "ディレクトリ設定",
                 "source_directory": "ソースディレクトリ:",
                 "target_directory": "ターゲットディレクトリ:",
@@ -200,7 +200,7 @@ class FileOrganizer:
                 "other": "その他"
             },
             "en": {
-                "app_title": "File Organization System",
+                "app_title": "File Organizer App",
                 "directory_settings": "Directory Settings",
                 "source_directory": "Source Directory:",
                 "target_directory": "Target Directory:",
@@ -288,7 +288,7 @@ class FileOrganizer:
                 "other": "Other"
             },
             "sv": {
-                "app_title": "Filorganiseringssystem",
+                "app_title": "Filorganiseringsapp",
                 "directory_settings": "Kataloginställningar",
                 "source_directory": "Källkatalog:",
                 "target_directory": "Målkatalog:",
