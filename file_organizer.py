@@ -508,19 +508,24 @@ class FileOrganizer:
         
         # Update file types based on current language after loading config
         if self.current_language in self.file_type_categories:
-            # Preserve existing custom categories when loading config
-            existing_file_types = self.config.get("file_types", {})
-            default_file_types = self.file_type_categories[self.current_language].copy()
-            
-            # Find custom categories (not in default)
-            custom_categories = {}
-            for category, extensions in existing_file_types.items():
-                if category not in default_file_types:
-                    custom_categories[category] = extensions
-            
-            # Merge default and custom
-            self.config["file_types"] = default_file_types.copy()
-            self.config["file_types"].update(custom_categories)
+            # Only update if file_types is empty (first run)
+            if not self.config.get("file_types"):
+                self.config["file_types"] = self.file_type_categories[self.current_language].copy()
+            else:
+                # Preserve existing categories and merge with defaults
+                existing_file_types = self.config.get("file_types", {})
+                default_file_types = self.file_type_categories[self.current_language].copy()
+                
+                # Find custom categories (not in default)
+                custom_categories = {}
+                for category, extensions in existing_file_types.items():
+                    if category not in default_file_types:
+                        custom_categories[category] = extensions
+                
+                # Merge default and custom
+                merged_file_types = default_file_types.copy()
+                merged_file_types.update(custom_categories)
+                self.config["file_types"] = merged_file_types
         
         # Mark config as loaded
         self.config_loaded = True
