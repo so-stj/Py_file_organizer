@@ -483,8 +483,11 @@ class FileOrganizer:
             default_file_types = self.file_type_categories[self.current_language].copy()
             print(f"Default categories: {list(default_file_types.keys())}")
             
-            # If there are existing custom file types, merge them
-            if self.config.get("file_types"):
+            # Check if this is a reset scenario (language_selected is False)
+            if not self.config.get("language_selected", True):
+                print("Reset detected: using default categories only")
+                self.config["file_types"] = default_file_types
+            elif self.config.get("file_types"):
                 # Find custom categories (not in default)
                 custom_categories = {}
                 for category, extensions in self.config["file_types"].items():
@@ -525,8 +528,20 @@ class FileOrganizer:
                     self.config.update(saved_config)
                 print(f"Config file loaded: {self.config_file}")
                 print(f"Loaded categories count: {len(self.config.get('file_types', {}))}")
+                print(f"Language selected: {self.config.get('language_selected', False)}")
             except Exception as e:
                 print(f"Config file loading error: {e}")
+                # If config file is corrupted, reset to defaults
+                print("Resetting to default configuration due to loading error")
+                self.config = {
+                    "file_types": {},
+                    "recent_directories": [],
+                    "auto_organize": True,
+                    "create_date_folders": True,
+                    "move_duplicates": True,
+                    "language": "ja",
+                    "language_selected": False
+                }
         
         # Set current language from config
         self.current_language = self.config.get("language", "ja")
@@ -541,27 +556,32 @@ class FileOrganizer:
                 print("First run: setting default categories")
                 self.config["file_types"] = self.file_type_categories[self.current_language].copy()
             else:
-                # Preserve existing categories and merge with defaults
-                existing_file_types = self.config.get("file_types", {})
-                default_file_types = self.file_type_categories[self.current_language].copy()
-                
-                print(f"Existing categories: {list(existing_file_types.keys())}")
-                print(f"Default categories: {list(default_file_types.keys())}")
-                
-                # Find custom categories (not in default)
-                custom_categories = {}
-                for category, extensions in existing_file_types.items():
-                    if category not in default_file_types:
-                        custom_categories[category] = extensions
-                
-                print(f"Custom categories: {list(custom_categories.keys())}")
-                
-                # Merge default and custom
-                merged_file_types = default_file_types.copy()
-                merged_file_types.update(custom_categories)
-                self.config["file_types"] = merged_file_types
-                
-                print(f"Merged categories: {list(self.config['file_types'].keys())}")
+                # Check if this is a reset scenario (language_selected is False)
+                if not self.config.get("language_selected", True):
+                    print("Reset detected: setting default categories only")
+                    self.config["file_types"] = self.file_type_categories[self.current_language].copy()
+                else:
+                    # Preserve existing categories and merge with defaults
+                    existing_file_types = self.config.get("file_types", {})
+                    default_file_types = self.file_type_categories[self.current_language].copy()
+                    
+                    print(f"Existing categories: {list(existing_file_types.keys())}")
+                    print(f"Default categories: {list(default_file_types.keys())}")
+                    
+                    # Find custom categories (not in default)
+                    custom_categories = {}
+                    for category, extensions in existing_file_types.items():
+                        if category not in default_file_types:
+                            custom_categories[category] = extensions
+                    
+                    print(f"Custom categories: {list(custom_categories.keys())}")
+                    
+                    # Merge default and custom
+                    merged_file_types = default_file_types.copy()
+                    merged_file_types.update(custom_categories)
+                    self.config["file_types"] = merged_file_types
+                    
+                    print(f"Merged categories: {list(self.config['file_types'].keys())}")
         
         # Mark config as loaded
         self.config_loaded = True
@@ -1128,25 +1148,53 @@ class SettingsWindow:
             self.config = reset_config.copy()
             
             if self.app_instance:
+                # Completely reset app instance configuration
                 self.app_instance.config = reset_config.copy()
                 self.app_instance.current_language = "ja"
                 
-                # Reset app instance file type categories to default
-                if "ja" in self.app_instance.file_type_categories:
-                    # Get the original default categories
-                    default_categories = {
-                        "画像": [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".webp"],
-                        "動画": [".mp4", ".avi", ".mov", ".wmv", ".flv", ".mkv", ".webm"],
-                        "音声": [".mp3", ".wav", ".flac", ".aac", ".ogg", ".wma"],
-                        "文書": [".pdf", ".doc", ".docx", ".txt", ".rtf", ".odt"],
-                        "スプレッドシート": [".xls", ".xlsx", ".csv", ".ods"],
-                        "プレゼンテーション": [".ppt", ".pptx", ".odp"],
-                        "アーカイブ": [".zip", ".rar", ".7z", ".tar", ".gz"],
-                        "実行ファイル": [".exe", ".msi", ".dmg", ".deb", ".rpm"],
-                        "コード": [".py", ".js", ".html", ".css", ".java", ".cpp", ".c", ".php"]
-                    }
-                    self.app_instance.file_type_categories["ja"] = default_categories.copy()
-                    print("Reset app instance file type categories")
+                # Reset app instance file type categories to default for all languages
+                for lang in ["ja", "en", "sv"]:
+                    if lang in self.app_instance.file_type_categories:
+                        # Get the original default categories for each language
+                        if lang == "ja":
+                            default_categories = {
+                                "画像": [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".webp"],
+                                "動画": [".mp4", ".avi", ".mov", ".wmv", ".flv", ".mkv", ".webm"],
+                                "音声": [".mp3", ".wav", ".flac", ".aac", ".ogg", ".wma"],
+                                "文書": [".pdf", ".doc", ".docx", ".txt", ".rtf", ".odt"],
+                                "スプレッドシート": [".xls", ".xlsx", ".csv", ".ods"],
+                                "プレゼンテーション": [".ppt", ".pptx", ".odp"],
+                                "アーカイブ": [".zip", ".rar", ".7z", ".tar", ".gz"],
+                                "実行ファイル": [".exe", ".msi", ".dmg", ".deb", ".rpm"],
+                                "コード": [".py", ".js", ".html", ".css", ".java", ".cpp", ".c", ".php"]
+                            }
+                        elif lang == "en":
+                            default_categories = {
+                                "Images": [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".webp"],
+                                "Videos": [".mp4", ".avi", ".mov", ".wmv", ".flv", ".mkv", ".webm"],
+                                "Audio": [".mp3", ".wav", ".flac", ".aac", ".ogg", ".wma"],
+                                "Documents": [".pdf", ".doc", ".docx", ".txt", ".rtf", ".odt"],
+                                "Spreadsheets": [".xls", ".xlsx", ".csv", ".ods"],
+                                "Presentations": [".ppt", ".pptx", ".odp"],
+                                "Archives": [".zip", ".rar", ".7z", ".tar", ".gz"],
+                                "Executables": [".exe", ".msi", ".dmg", ".deb", ".rpm"],
+                                "Code": [".py", ".js", ".html", ".css", ".java", ".cpp", ".c", ".php"]
+                            }
+                        elif lang == "sv":
+                            default_categories = {
+                                "Bilder": [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".webp"],
+                                "Videor": [".mp4", ".avi", ".mov", ".wmv", ".flv", ".mkv", ".webm"],
+                                "Ljud": [".mp3", ".wav", ".flac", ".aac", ".ogg", ".wma"],
+                                "Dokument": [".pdf", ".doc", ".docx", ".txt", ".rtf", ".odt"],
+                                "Kalkylblad": [".xls", ".xlsx", ".csv", ".ods"],
+                                "Presentationer": [".ppt", ".pptx", ".odp"],
+                                "Arkiv": [".zip", ".rar", ".7z", ".tar", ".gz"],
+                                "Körbara filer": [".exe", ".msi", ".dmg", ".deb", ".rpm"],
+                                "Kod": [".py", ".js", ".html", ".css", ".java", ".cpp", ".c", ".php"]
+                            }
+                        
+                        self.app_instance.file_type_categories[lang] = default_categories.copy()
+                        print(f"Reset app instance file type categories for {lang}")
                 
                 print("Updated app instance settings")
             
@@ -1160,7 +1208,7 @@ class SettingsWindow:
                     os.makedirs(config_dir, exist_ok=True)
                     print(f"Directory created: {config_dir}")
                 
-                # Ensure file_types is empty
+                # Ensure file_types is empty and language_selected is False
                 reset_config["file_types"] = {}
                 reset_config["language_selected"] = False
                 
