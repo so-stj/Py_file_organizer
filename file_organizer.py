@@ -442,6 +442,11 @@ class FileOrganizer:
             self.current_language = selected_language
             self.config["language"] = selected_language
             self.config["language_selected"] = True
+            
+            # Update file types for selected language
+            print("選択した言語のファイルタイプを更新中...")
+            self.update_file_types_for_language()
+            
             print("設定ファイルを保存中...")
             self.save_config()
             print("設定ファイル保存完了")
@@ -459,8 +464,11 @@ class FileOrganizer:
     def update_file_types_for_language(self):
         """Update file types based on current language"""
         if self.current_language in self.file_type_categories:
-            # Update file types when language changes, but preserve custom additions
+            print(f"言語 '{self.current_language}' のファイルタイプを更新中...")
+            
+            # Get default file types for current language
             default_file_types = self.file_type_categories[self.current_language].copy()
+            print(f"デフォルトカテゴリー: {list(default_file_types.keys())}")
             
             # If there are existing custom file types, merge them
             if self.config.get("file_types"):
@@ -470,16 +478,20 @@ class FileOrganizer:
                     if category not in default_file_types:
                         custom_categories[category] = extensions
                 
+                print(f"保持するカスタムカテゴリー: {list(custom_categories.keys())}")
+                
                 # Merge default and custom
                 self.config["file_types"] = default_file_types.copy()
                 self.config["file_types"].update(custom_categories)
             else:
                 # First time, just use default
                 self.config["file_types"] = default_file_types
+                print("初回起動: デフォルトカテゴリーのみ設定")
             
-            # Only save if this is not the initial load
-            if hasattr(self, 'config_loaded'):
-                self.save_config()
+            print(f"更新後のカテゴリー: {list(self.config['file_types'].keys())}")
+            
+            # Save configuration
+            self.save_config()
     
     def load_config(self):
         """Load configuration file"""
