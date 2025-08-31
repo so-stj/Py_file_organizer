@@ -26,9 +26,16 @@ class FileOrganizer:
         # Configuration file
         # Use user's app data directory on Windows, current directory on other platforms
         if os.name == 'nt':  # Windows
-            app_data_dir = os.path.join(os.path.expanduser('~'), 'AppData', 'Local', 'FileOrganizer')
-            os.makedirs(app_data_dir, exist_ok=True)
-            self.config_file = os.path.join(app_data_dir, "file_organizer_config.json")
+            try:
+                app_data_dir = os.path.join(os.path.expanduser('~'), 'AppData', 'Local', 'FileOrganizer')
+                os.makedirs(app_data_dir, exist_ok=True)
+                self.config_file = os.path.join(app_data_dir, "file_organizer_config.json")
+                print(f"Windows設定ファイルパス: {self.config_file}")
+            except Exception as e:
+                print(f"Windows設定ディレクトリ作成エラー: {e}")
+                # Fallback to current directory
+                self.config_file = "file_organizer_config.json"
+                print(f"フォールバック設定ファイルパス: {self.config_file}")
         else:  # Linux/Mac
             self.config_file = "file_organizer_config.json"
         print(f"設定ファイルパス: {self.config_file}")
@@ -559,12 +566,31 @@ class FileOrganizer:
     def save_config(self):
         """Save configuration file"""
         try:
+            print(f"設定ファイルを保存中: {self.config_file}")
+            print(f"保存する設定: {self.config}")
+            
+            # Ensure directory exists (especially important for Windows)
+            config_dir = os.path.dirname(self.config_file)
+            if config_dir and not os.path.exists(config_dir):
+                os.makedirs(config_dir, exist_ok=True)
+                print(f"ディレクトリを作成しました: {config_dir}")
+            
             with open(self.config_file, 'w', encoding='utf-8') as f:
                 json.dump(self.config, f, ensure_ascii=False, indent=2)
+            
             print(f"設定ファイルを保存しました: {self.config_file}")
             print(f"保存されたカテゴリー数: {len(self.config.get('file_types', {}))}")
+            
+            # Verify file was created
+            if os.path.exists(self.config_file):
+                print(f"✓ ファイルが正常に作成されました: {self.config_file}")
+            else:
+                print(f"✗ ファイルが作成されませんでした: {self.config_file}")
+                
         except Exception as e:
             print(f"{self.get_text('error_config_save')} {e}")
+            import traceback
+            traceback.print_exc()
     
     def setup_ui(self):
         """Build UI"""
@@ -1080,8 +1106,12 @@ class SettingsWindow:
         if messagebox.askyesno("Confirm", self.get_text("confirm_reset_defaults")):
             print("初期化を実行中...")
             
+            # Get the correct config file path
+            config_file_path = self.app_instance.config_file if self.app_instance else "file_organizer_config.json"
+            print(f"設定ファイルパス: {config_file_path}")
+            
             # Reset to default configuration
-            self.config = {
+            reset_config = {
                 "file_types": {},
                 "recent_directories": [],
                 "auto_organize": True,
@@ -1091,15 +1121,46 @@ class SettingsWindow:
                 "language_selected": False
             }
             
-            # Also reset app instance settings
-            if self.app_instance:
-                self.app_instance.current_language = "ja"
-                # Reset app instance file types to default
-                if "ja" in self.app_instance.file_type_categories:
-                    self.app_instance.file_type_categories["ja"] = self.app_instance.file_type_categories["ja"].copy()
+            # Update both settings window config and app instance config
+            self.config = reset_config.copy()
             
+            if self.app_instance:
+                self.app_instance.config = reset_config.copy()
+                self.app_instance.current_language = "ja"
+                print("アプリケーションインスタンスの設定を更新しました")
+            
+            print(f"初期化後の設定: {self.config}")
+            
+            # Save configuration directly to ensure it's written
+            try:
+                # Ensure directory exists
+                config_dir = os.path.dirname(config_file_path)
+                if config_dir and not os.path.exists(config_dir):
+                    os.makedirs(config_dir, exist_ok=True)
+                    print(f"ディレクトリを作成しました: {config_dir}")
+                
+                # Save configuration
+                with open(config_file_path, 'w', encoding='utf-8') as f:
+                    json.dump(reset_config, f, ensure_ascii=False, indent=2)
+                
+                print(f"設定ファイルを直接保存しました: {config_file_path}")
+                
+                # Verify file was created
+                if os.path.exists(config_file_path):
+                    print("✓ 設定ファイルが正常に作成されました")
+                else:
+                    print("✗ 設定ファイルが作成されませんでした")
+                    
+            except Exception as e:
+                print(f"設定ファイル保存エラー: {e}")
+                import traceback
+                traceback.print_exc()
+            
+            # Also call save_callback for consistency
             self.save_callback()
             print("初期化完了: 設定ファイルを保存しました")
+            
+            # Show completion message
             messagebox.showinfo("Info", self.get_text("settings_reset"))
             
             # Close settings window to force restart
