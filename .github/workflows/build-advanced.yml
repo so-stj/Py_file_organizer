@@ -16,6 +16,12 @@ jobs:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v4
+      with:
+        clean: true
+    
+    - name: Clean up Zone.Identifier files
+      run: |
+        Get-ChildItem -Recurse -Name "*:Zone.Identifier" | ForEach-Object { Remove-Item $_ -Force }
     
     - name: Set up Python
       uses: actions/setup-python@v4

@@ -1,0 +1,12 @@
+# Ignore Zone.Identifier files (Windows security feature)
+*:Zone.Identifier text eol=crlf
+*:Zone.Identifier binary
+
+# Handle line endings
+*.py text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.ico binary
