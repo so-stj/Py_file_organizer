@@ -24,7 +24,13 @@ class FileOrganizer:
         self.root.configure(bg='#f0f0f0')
         
         # Configuration file
-        self.config_file = "file_organizer_config.json"
+        # Use user's app data directory on Windows, current directory on other platforms
+        if os.name == 'nt':  # Windows
+            app_data_dir = os.path.join(os.path.expanduser('~'), 'AppData', 'Local', 'FileOrganizer')
+            os.makedirs(app_data_dir, exist_ok=True)
+            self.config_file = os.path.join(app_data_dir, "file_organizer_config.json")
+        else:  # Linux/Mac
+            self.config_file = "file_organizer_config.json"
         print(f"設定ファイルパス: {self.config_file}")
         
         # Setup language first
