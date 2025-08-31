@@ -528,6 +528,7 @@ class FileOrganizer:
                 print(f"Config file loaded: {self.config_file}")
                 print(f"Loaded categories count: {len(self.config.get('file_types', {}))}")
                 print(f"Language selected: {self.config.get('language_selected', False)}")
+                print(f"Loaded config content: {self.config}")
             except Exception as e:
                 print(f"Config file loading error: {e}")
                 # If config file is corrupted, reset to defaults
@@ -1126,6 +1127,14 @@ class SettingsWindow:
             # Get the correct config file path
             config_file_path = self.app_instance.config_file if self.app_instance else "file_organizer_config.json"
             print(f"Config file path: {config_file_path}")
+            print(f"Config file exists before reset: {os.path.exists(config_file_path)}")
+            if os.path.exists(config_file_path):
+                try:
+                    with open(config_file_path, 'r', encoding='utf-8') as f:
+                        current_config = json.load(f)
+                    print(f"Current config content: {current_config}")
+                except Exception as e:
+                    print(f"Could not read current config: {e}")
             
             # Reset to default configuration
             reset_config = {
@@ -1202,6 +1211,14 @@ class SettingsWindow:
                     os.makedirs(config_dir, exist_ok=True)
                     print(f"Directory created: {config_dir}")
                 
+                # Remove existing config file if it exists (Windows compatibility)
+                if os.path.exists(config_file_path):
+                    try:
+                        os.remove(config_file_path)
+                        print(f"Removed existing config file: {config_file_path}")
+                    except Exception as e:
+                        print(f"Warning: Could not remove existing config file: {e}")
+                
                 # Ensure file_types is empty and language_selected is False
                 reset_config["file_types"] = {}
                 reset_config["language_selected"] = False
@@ -1221,6 +1238,7 @@ class SettingsWindow:
                         print("✓ Config file created successfully and reset completed")
                     else:
                         print("✗ Config file content is incorrect")
+                        print(f"Actual content: {saved_config}")
                 else:
                     print("✗ Config file was not created")
                     
