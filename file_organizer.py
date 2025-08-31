@@ -18,7 +18,7 @@ from typing import Dict, List, Tuple, Optional
 
 class FileOrganizer:
     def __init__(self):
-        print("アプリケーション初期化開始")
+        print("Application initialization started")
         self.root = tk.Tk()
         self.root.geometry("1000x700")
         self.root.configure(bg='#f0f0f0')
@@ -30,15 +30,15 @@ class FileOrganizer:
                 app_data_dir = os.path.join(os.path.expanduser('~'), 'AppData', 'Local', 'FileOrganizer')
                 os.makedirs(app_data_dir, exist_ok=True)
                 self.config_file = os.path.join(app_data_dir, "file_organizer_config.json")
-                print(f"Windows設定ファイルパス: {self.config_file}")
+                print(f"Windows config file path: {self.config_file}")
             except Exception as e:
-                print(f"Windows設定ディレクトリ作成エラー: {e}")
+                print(f"Windows config directory creation error: {e}")
                 # Fallback to current directory
                 self.config_file = "file_organizer_config.json"
-                print(f"フォールバック設定ファイルパス: {self.config_file}")
+                print(f"Fallback config file path: {self.config_file}")
         else:  # Linux/Mac
             self.config_file = "file_organizer_config.json"
-        print(f"設定ファイルパス: {self.config_file}")
+        print(f"Config file path: {self.config_file}")
         
         # Setup language first
         self.setup_language()
@@ -48,10 +48,10 @@ class FileOrganizer:
         
         # Check if this is first run and show language selection
         if not self.config.get("language_selected", False):
-            print("初回起動: 言語選択ダイアログを表示")
+            print("First run: showing language selection dialog")
             self.show_language_selection()
         else:
-            print("既存の設定を使用")
+            print("Using existing settings")
         
         # Update file types based on current language
         self.update_file_types_for_language()
@@ -67,7 +67,7 @@ class FileOrganizer:
         
         self.setup_ui()
         self.load_recent_directories()
-        print("アプリケーション初期化完了")
+        print("Application initialization completed")
     
     def setup_language(self):
         """Setup language dictionaries"""
@@ -451,18 +451,18 @@ class FileOrganizer:
         
         def confirm_language():
             selected_language = self.language_var.get()
-            print(f"選択された言語: {selected_language}")
+            print(f"Selected language: {selected_language}")
             self.current_language = selected_language
             self.config["language"] = selected_language
             self.config["language_selected"] = True
             
             # Update file types for selected language
-            print("選択した言語のファイルタイプを更新中...")
+            print("Updating file types for selected language...")
             self.update_file_types_for_language()
             
-            print("設定ファイルを保存中...")
+            print("Saving config file...")
             self.save_config()
-            print("設定ファイル保存完了")
+            print("Config file saved")
             dialog.destroy()
             # Update window title
             self.root.title(self.get_text("app_title"))
@@ -477,11 +477,11 @@ class FileOrganizer:
     def update_file_types_for_language(self):
         """Update file types based on current language"""
         if self.current_language in self.file_type_categories:
-            print(f"言語 '{self.current_language}' のファイルタイプを更新中...")
+            print(f"Updating file types for language '{self.current_language}'...")
             
             # Get default file types for current language
             default_file_types = self.file_type_categories[self.current_language].copy()
-            print(f"デフォルトカテゴリー: {list(default_file_types.keys())}")
+            print(f"Default categories: {list(default_file_types.keys())}")
             
             # If there are existing custom file types, merge them
             if self.config.get("file_types"):
@@ -491,7 +491,7 @@ class FileOrganizer:
                     if category not in default_file_types:
                         custom_categories[category] = extensions
                 
-                print(f"保持するカスタムカテゴリー: {list(custom_categories.keys())}")
+                print(f"Preserving custom categories: {list(custom_categories.keys())}")
                 
                 # Merge default and custom
                 self.config["file_types"] = default_file_types.copy()
@@ -499,9 +499,9 @@ class FileOrganizer:
             else:
                 # First time, just use default
                 self.config["file_types"] = default_file_types
-                print("初回起動: デフォルトカテゴリーのみ設定")
+                print("First run: setting default categories only")
             
-            print(f"更新後のカテゴリー: {list(self.config['file_types'].keys())}")
+            print(f"Updated categories: {list(self.config['file_types'].keys())}")
             
             # Save configuration
             self.save_config()
@@ -523,10 +523,10 @@ class FileOrganizer:
                 with open(self.config_file, 'r', encoding='utf-8') as f:
                     saved_config = json.load(f)
                     self.config.update(saved_config)
-                print(f"設定ファイルを読み込みました: {self.config_file}")
-                print(f"読み込まれたカテゴリー数: {len(self.config.get('file_types', {}))}")
+                print(f"Config file loaded: {self.config_file}")
+                print(f"Loaded categories count: {len(self.config.get('file_types', {}))}")
             except Exception as e:
-                print(f"設定ファイルの読み込みエラー: {e}")
+                print(f"Config file loading error: {e}")
         
         # Set current language from config
         self.current_language = self.config.get("language", "ja")
@@ -535,18 +535,18 @@ class FileOrganizer:
         if self.current_language in self.file_type_categories:
             # Check if this is a reset (empty file_types and language_selected is False)
             if not self.config.get("file_types") and not self.config.get("language_selected", True):
-                print("初期化後の起動: デフォルトカテゴリーを設定")
+                print("Post-reset startup: setting default categories")
                 self.config["file_types"] = self.file_type_categories[self.current_language].copy()
             elif not self.config.get("file_types"):
-                print("初回起動: デフォルトカテゴリーを設定")
+                print("First run: setting default categories")
                 self.config["file_types"] = self.file_type_categories[self.current_language].copy()
             else:
                 # Preserve existing categories and merge with defaults
                 existing_file_types = self.config.get("file_types", {})
                 default_file_types = self.file_type_categories[self.current_language].copy()
                 
-                print(f"既存のカテゴリー: {list(existing_file_types.keys())}")
-                print(f"デフォルトカテゴリー: {list(default_file_types.keys())}")
+                print(f"Existing categories: {list(existing_file_types.keys())}")
+                print(f"Default categories: {list(default_file_types.keys())}")
                 
                 # Find custom categories (not in default)
                 custom_categories = {}
@@ -554,14 +554,14 @@ class FileOrganizer:
                     if category not in default_file_types:
                         custom_categories[category] = extensions
                 
-                print(f"カスタムカテゴリー: {list(custom_categories.keys())}")
+                print(f"Custom categories: {list(custom_categories.keys())}")
                 
                 # Merge default and custom
                 merged_file_types = default_file_types.copy()
                 merged_file_types.update(custom_categories)
                 self.config["file_types"] = merged_file_types
                 
-                print(f"マージ後のカテゴリー: {list(self.config['file_types'].keys())}")
+                print(f"Merged categories: {list(self.config['file_types'].keys())}")
         
         # Mark config as loaded
         self.config_loaded = True
@@ -569,26 +569,26 @@ class FileOrganizer:
     def save_config(self):
         """Save configuration file"""
         try:
-            print(f"設定ファイルを保存中: {self.config_file}")
-            print(f"保存する設定: {self.config}")
+            print(f"Saving config file: {self.config_file}")
+            print(f"Settings to save: {self.config}")
             
             # Ensure directory exists (especially important for Windows)
             config_dir = os.path.dirname(self.config_file)
             if config_dir and not os.path.exists(config_dir):
                 os.makedirs(config_dir, exist_ok=True)
-                print(f"ディレクトリを作成しました: {config_dir}")
+                print(f"Directory created: {config_dir}")
             
             with open(self.config_file, 'w', encoding='utf-8') as f:
                 json.dump(self.config, f, ensure_ascii=False, indent=2)
             
-            print(f"設定ファイルを保存しました: {self.config_file}")
-            print(f"保存されたカテゴリー数: {len(self.config.get('file_types', {}))}")
+            print(f"Config file saved: {self.config_file}")
+            print(f"Saved categories count: {len(self.config.get('file_types', {}))}")
             
             # Verify file was created
             if os.path.exists(self.config_file):
-                print(f"✓ ファイルが正常に作成されました: {self.config_file}")
+                print(f"✓ File created successfully: {self.config_file}")
             else:
-                print(f"✗ ファイルが作成されませんでした: {self.config_file}")
+                print(f"✗ File was not created: {self.config_file}")
                 
         except Exception as e:
             print(f"{self.get_text('error_config_save')} {e}")
@@ -1107,11 +1107,11 @@ class SettingsWindow:
     def reset_to_defaults(self):
         """Reset all settings to defaults"""
         if messagebox.askyesno("Confirm", self.get_text("confirm_reset_defaults")):
-            print("初期化を実行中...")
+            print("Executing reset...")
             
             # Get the correct config file path
             config_file_path = self.app_instance.config_file if self.app_instance else "file_organizer_config.json"
-            print(f"設定ファイルパス: {config_file_path}")
+            print(f"Config file path: {config_file_path}")
             
             # Reset to default configuration
             reset_config = {
@@ -1146,11 +1146,11 @@ class SettingsWindow:
                         "コード": [".py", ".js", ".html", ".css", ".java", ".cpp", ".c", ".php"]
                     }
                     self.app_instance.file_type_categories["ja"] = default_categories.copy()
-                    print("アプリケーションインスタンスのファイルタイプカテゴリーをリセットしました")
+                    print("Reset app instance file type categories")
                 
-                print("アプリケーションインスタンスの設定を更新しました")
+                print("Updated app instance settings")
             
-            print(f"初期化後の設定: {self.config}")
+            print(f"Reset configuration: {self.config}")
             
             # Save configuration directly to ensure it's written
             try:
@@ -1158,7 +1158,7 @@ class SettingsWindow:
                 config_dir = os.path.dirname(config_file_path)
                 if config_dir and not os.path.exists(config_dir):
                     os.makedirs(config_dir, exist_ok=True)
-                    print(f"ディレクトリを作成しました: {config_dir}")
+                    print(f"Directory created: {config_dir}")
                 
                 # Ensure file_types is empty
                 reset_config["file_types"] = {}
@@ -1168,28 +1168,28 @@ class SettingsWindow:
                 with open(config_file_path, 'w', encoding='utf-8') as f:
                     json.dump(reset_config, f, ensure_ascii=False, indent=2)
                 
-                print(f"設定ファイルを直接保存しました: {config_file_path}")
-                print(f"保存された設定: file_types={reset_config['file_types']}, language_selected={reset_config['language_selected']}")
+                print(f"Config file saved directly: {config_file_path}")
+                print(f"Saved settings: file_types={reset_config['file_types']}, language_selected={reset_config['language_selected']}")
                 
                 # Verify file was created and content is correct
                 if os.path.exists(config_file_path):
                     with open(config_file_path, 'r', encoding='utf-8') as f:
                         saved_config = json.load(f)
                     if not saved_config.get('file_types') and not saved_config.get('language_selected', True):
-                        print("✓ 設定ファイルが正常に作成され、初期化が完了しました")
+                        print("✓ Config file created successfully and reset completed")
                     else:
-                        print("✗ 設定ファイルの内容が正しくありません")
+                        print("✗ Config file content is incorrect")
                 else:
-                    print("✗ 設定ファイルが作成されませんでした")
+                    print("✗ Config file was not created")
                     
             except Exception as e:
-                print(f"設定ファイル保存エラー: {e}")
+                print(f"Config file save error: {e}")
                 import traceback
                 traceback.print_exc()
             
             # Also call save_callback for consistency
             self.save_callback()
-            print("初期化完了: 設定ファイルを保存しました")
+            print("Reset completed: config file saved")
             
             # Show completion message
             messagebox.showinfo("Info", self.get_text("settings_reset"))
@@ -1204,7 +1204,7 @@ class SettingsWindow:
         
         # Always use config file types to show all categories including custom ones
         file_types = self.config["file_types"]
-        print(f"設定画面で表示するカテゴリー: {list(file_types.keys())}")
+        print(f"Categories to display in settings: {list(file_types.keys())}")
         
         for category, extensions in file_types.items():
             item = self.tree.insert("", tk.END, text=category, values=(category, ", ".join(extensions)))
@@ -1216,7 +1216,7 @@ class SettingsWindow:
         dialog = FileTypeDialog(self.window, self.get_text("new_file_type"), app_instance=self.app_instance)
         if dialog.result:
             category, extensions = dialog.result
-            print(f"カテゴリー追加: {category} - {extensions}")
+            print(f"Adding category: {category} - {extensions}")
             
             # Update config file types
             self.config["file_types"][category] = extensions
@@ -1228,7 +1228,7 @@ class SettingsWindow:
             self.load_file_types()
             # Save the configuration
             self.save_callback()
-            print(f"追加後のカテゴリー数: {len(self.config['file_types'])}")
+            print(f"Categories count after addition: {len(self.config['file_types'])}")
     
     def edit_file_type(self):
         """Edit file type"""
