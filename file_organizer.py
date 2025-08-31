@@ -391,8 +391,7 @@ class FileOrganizer:
             if not self.config.get("language_selected", True):
                 print("Language change after reset: using default categories only")
                 # After reset, don't preserve any categories from previous language
-                if language in self.file_type_categories:
-                    self.config["file_types"] = self.file_type_categories[language].copy()
+                self.set_language_categories_only(language)
             else:
                 # Normal language change: use update_file_types_for_language
                 self.update_file_types_for_language()
@@ -465,9 +464,14 @@ class FileOrganizer:
             self.config["language"] = selected_language
             self.config["language_selected"] = True
             
-            # Update file types for selected language
-            print("Updating file types for selected language...")
-            self.update_file_types_for_language()
+            # Check if this is after a reset (file_types is empty)
+            if not self.config.get("file_types"):
+                print("Language selection after reset: setting default categories only")
+                self.set_language_categories_only(selected_language)
+            else:
+                # Normal language selection: use update_file_types_for_language
+                print("Normal language selection: updating file types")
+                self.update_file_types_for_language()
             
             print("Saving config file...")
             self.save_config()
@@ -518,6 +522,14 @@ class FileOrganizer:
             # Save configuration
             self.save_config()
     
+    def set_language_categories_only(self, language: str):
+        """Set only the default categories for a specific language (for reset scenarios)"""
+        if language in self.file_type_categories:
+            print(f"Setting default categories for language '{language}' only")
+            self.config["file_types"] = self.file_type_categories[language].copy()
+            print(f"Categories set: {list(self.config['file_types'].keys())}")
+            self.save_config()
+    
     def load_config(self):
         """Load configuration file"""
         self.config = {
@@ -553,15 +565,16 @@ class FileOrganizer:
                     "language_selected": False
                 }
         
-        # Set current language from config
+        # Set current language from config (but don't set file types if reset)
         self.current_language = self.config.get("language", "ja")
         
         # Update file types based on current language after loading config
         if self.current_language in self.file_type_categories:
             # Check if this is a reset scenario (language_selected is False)
             if not self.config.get("language_selected", True):
-                print("Reset detected: setting default categories only")
-                self.config["file_types"] = self.file_type_categories[self.current_language].copy()
+                print("Reset detected: not setting any categories yet - waiting for language selection")
+                # Don't set any categories during reset - wait for language selection dialog
+                self.config["file_types"] = {}
             elif not self.config.get("file_types"):
                 print("First run: setting default categories")
                 self.config["file_types"] = self.file_type_categories[self.current_language].copy()
@@ -1367,8 +1380,8 @@ class SettingsWindow:
                 print("Language change after reset: using default categories only")
                 # After reset, don't preserve any categories from previous language
                 self.config["language"] = new_language
-                if self.app_instance and new_language in self.app_instance.file_type_categories:
-                    self.config["file_types"] = self.app_instance.file_type_categories[new_language].copy()
+                if self.app_instance:
+                    self.app_instance.set_language_categories_only(new_language)
             else:
                 # Normal language change: preserve only truly custom categories
                 print("Normal language change: preserving custom categories")
