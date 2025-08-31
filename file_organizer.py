@@ -31,10 +31,6 @@ class FileOrganizer:
         # Load config after language setup
         self.load_config()
         
-        # Check if this is first run and show language selection
-        if not self.config.get("language_selected", False):
-            self.show_language_selection()
-        
         # Update file types based on current language
         self.update_file_types_for_language()
         
@@ -339,78 +335,7 @@ class FileOrganizer:
             self.save_config()
             messagebox.showinfo("Info", self.get_text("restart_required"))
     
-    def show_language_selection(self):
-        """Show language selection dialog on first run"""
-        # Create language selection dialog
-        dialog = tk.Toplevel(self.root)
-        dialog.title("Language Selection / 言語選択")
-        dialog.geometry("400x300")
-        dialog.transient(self.root)
-        dialog.grab_set()
-        dialog.resizable(False, False)
-        
-        # Center the dialog
-        dialog.update_idletasks()
-        x = (dialog.winfo_screenwidth() // 2) - (400 // 2)
-        y = (dialog.winfo_screenheight() // 2) - (300 // 2)
-        dialog.geometry(f"400x300+{x}+{y}")
-        
-        # Main frame
-        main_frame = ttk.Frame(dialog, padding="20")
-        main_frame.pack(fill=tk.BOTH, expand=True)
-        
-        # Title
-        title_label = ttk.Label(main_frame, text="Select your preferred language\nお好みの言語を選択してください", 
-                               justify=tk.CENTER)
-        title_label.pack(pady=(0, 20))
-        
-        # Language selection
-        self.language_var = tk.StringVar(value=self.current_language)
-        
-        # Japanese option
-        ja_frame = ttk.Frame(main_frame)
-        ja_frame.pack(fill=tk.X, pady=5)
-        ttk.Radiobutton(ja_frame, text="日本語", variable=self.language_var, 
-                       value="ja").pack(side=tk.LEFT)
-        ttk.Label(ja_frame, text="Japanese").pack(side=tk.LEFT, padx=(10, 0))
-        
-        # English option
-        en_frame = ttk.Frame(main_frame)
-        en_frame.pack(fill=tk.X, pady=5)
-        ttk.Radiobutton(en_frame, text="English", variable=self.language_var, 
-                       value="en").pack(side=tk.LEFT)
-        ttk.Label(en_frame, text="英語").pack(side=tk.LEFT, padx=(10, 0))
-        
-        # Swedish option
-        sv_frame = ttk.Frame(main_frame)
-        sv_frame.pack(fill=tk.X, pady=5)
-        ttk.Radiobutton(sv_frame, text="Svenska", variable=self.language_var, 
-                       value="sv").pack(side=tk.LEFT)
-        ttk.Label(sv_frame, text="スウェーデン語").pack(side=tk.LEFT, padx=(10, 0))
-        
-        # Description
-        desc_label = ttk.Label(main_frame, text="You can change the language later in Settings.\n後で設定から言語を変更できます。", 
-                              justify=tk.CENTER)
-        desc_label.pack(pady=(20, 0))
-        
-        # Buttons
-        btn_frame = ttk.Frame(main_frame)
-        btn_frame.pack(fill=tk.X, pady=(20, 0))
-        
-        def confirm_language():
-            selected_language = self.language_var.get()
-            self.current_language = selected_language
-            self.config["language"] = selected_language
-            self.config["language_selected"] = True
-            self.save_config()
-            dialog.destroy()
-            # Update window title
-            self.root.title(self.get_text("app_title"))
-        
-        ttk.Button(btn_frame, text="OK / 決定", command=confirm_language).pack(side=tk.RIGHT)
-        
-        # Make dialog modal
-        dialog.wait_window()
+
     
     def update_file_types_for_language(self):
         """Update file types based on current language"""
@@ -441,8 +366,7 @@ class FileOrganizer:
             "auto_organize": True,
             "create_date_folders": True,
             "move_duplicates": True,
-            "language": "ja",
-            "language_selected": False
+            "language": "ja"
         }
         
         if os.path.exists(self.config_file):
@@ -943,11 +867,7 @@ class SettingsWindow:
                        value="sv").pack(anchor=tk.W)
         
         # Save button
-        ttk.Button(frame, text=self.get_text("save"), command=self.save_language_settings).pack(pady=(20, 10))
-        
-        # Reset language selection button
-        ttk.Button(frame, text="Reset Language Selection / 言語選択をリセット", 
-                  command=self.reset_language_selection).pack(pady=(0, 20))
+        ttk.Button(frame, text=self.get_text("save"), command=self.save_language_settings).pack(pady=20)
     
     def load_file_types(self):
         """Load file types into tree view"""
@@ -1039,10 +959,26 @@ class SettingsWindow:
         """Save language settings"""
         new_language = self.language_var.get()
         if new_language != self.config.get("language", "ja"):
+            # Store current custom categories before language change
+            current_file_types = self.config.get("file_types", {})
+            custom_categories = {}
+            
+            # Find custom categories (not in default for current language)
+            if self.app_instance and self.app_instance.current_language in self.app_instance.file_type_categories:
+                default_categories = self.app_instance.file_type_categories[self.app_instance.current_language]
+                for category, extensions in current_file_types.items():
+                    if category not in default_categories:
+                        custom_categories[category] = extensions
+            
             self.config["language"] = new_language
-            # Update file types for new language
+            
+            # Update file types for new language, preserving custom categories
             if self.app_instance and new_language in self.app_instance.file_type_categories:
-                self.config["file_types"] = self.app_instance.file_type_categories[new_language].copy()
+                new_default_types = self.app_instance.file_type_categories[new_language].copy()
+                # Merge with custom categories
+                new_default_types.update(custom_categories)
+                self.config["file_types"] = new_default_types
+            
             self.save_callback()
             if self.app_instance:
                 self.app_instance.change_language(new_language)
@@ -1050,12 +986,7 @@ class SettingsWindow:
                 messagebox.showinfo("Info", self.get_text("restart_required"))
         self.window.destroy()
     
-    def reset_language_selection(self):
-        """Reset language selection to show dialog on next startup"""
-        if messagebox.askyesno("Confirm", "言語選択をリセットしますか？\n次回起動時に言語選択ダイアログが表示されます。\n\nReset language selection?\nLanguage selection dialog will appear on next startup."):
-            self.config["language_selected"] = False
-            self.save_callback()
-            messagebox.showinfo("Info", "言語選択がリセットされました。\n次回起動時に言語選択ダイアログが表示されます。\n\nLanguage selection has been reset.\nLanguage selection dialog will appear on next startup.")
+
 
 
 class FileTypeDialog:
