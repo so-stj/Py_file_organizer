@@ -19,7 +19,6 @@ from typing import Dict, List, Tuple, Optional
 class FileOrganizer:
     def __init__(self):
         self.root = tk.Tk()
-        self.root.title("ファイル仕分けシステム")
         self.root.geometry("1000x700")
         self.root.configure(bg='#f0f0f0')
         
@@ -27,14 +26,190 @@ class FileOrganizer:
         self.config_file = "file_organizer_config.json"
         self.load_config()
         
+        # Language settings
+        self.current_language = self.config.get("language", "ja")
+        self.setup_language()
+        
         # Variables
         self.source_directory = tk.StringVar()
         self.target_directory = tk.StringVar()
         self.search_pattern = tk.StringVar()
         self.organizing = False
         
+        # Set window title after language setup
+        self.root.title(self.get_text("app_title"))
+        
         self.setup_ui()
         self.load_recent_directories()
+    
+    def setup_language(self):
+        """Setup language dictionaries"""
+        self.languages = {
+            "ja": {
+                "app_title": "ファイル仕分けシステム",
+                "directory_settings": "ディレクトリ設定",
+                "source_directory": "ソースディレクトリ:",
+                "target_directory": "ターゲットディレクトリ:",
+                "browse": "参照",
+                "operations": "操作",
+                "start_auto_organize": "自動仕分け開始",
+                "stop": "停止",
+                "settings": "設定",
+                "file_search_separation": "ファイル検索・分離",
+                "search_pattern": "検索パターン:",
+                "search": "検索",
+                "separate_files": "該当ファイルを分離",
+                "operation_log": "操作ログ",
+                "clear_log": "ログクリア",
+                "ready": "準備完了",
+                "processing": "処理中",
+                "organization_complete": "仕分け完了",
+                "organization_stopped": "仕分けが停止されました。",
+                "error_source_target_required": "ソースディレクトリとターゲットディレクトリを指定してください。",
+                "error_source_required": "ソースディレクトリを指定してください。",
+                "error_target_required": "ターゲットディレクトリを指定してください。",
+                "error_pattern_required": "検索パターンを入力してください。",
+                "error_source_not_exists": "ソースディレクトリが存在しません:",
+                "error_no_files_found": "仕分け対象のファイルが見つかりません。",
+                "error_config_save": "設定保存エラー:",
+                "start_organization": "仕分け開始:",
+                "files_processed": "個のファイルを処理します...",
+                "organization_complete_files": "仕分け完了:",
+                "files_processed_complete": "個のファイルを処理しました。",
+                "move_file": "移動:",
+                "search_results": "検索結果:",
+                "files_found": "個のファイルが見つかりました",
+                "no_files_found": "該当するファイルが見つかりませんでした。",
+                "search_complete": "検索完了:",
+                "pattern_found": "パターン",
+                "files_discovered": "個のファイルを発見",
+                "search_error": "検索エラー:",
+                "separation_complete": "分離完了:",
+                "files_moved_to": "個のファイルを",
+                "moved_to": "に移動しました。",
+                "separation_error": "分離エラー:",
+                "separation_error_occurred": "分離中にエラーが発生しました:",
+                "files_separated": "個のファイルを分離しました。",
+                "save_location": "保存先:",
+                "warning_select_category": "編集するカテゴリを選択してください。",
+                "warning_select_delete_category": "削除するカテゴリを選択してください。",
+                "confirm_delete_category": "カテゴリ",
+                "confirm_delete_question": "を削除しますか？",
+                "settings_saved": "設定を保存しました。",
+                "category_name": "カテゴリ名:",
+                "category_name_required": "カテゴリ名を入力してください。",
+                "extensions_comma_separated": "拡張子 (カンマ区切り):",
+                "extensions_required": "拡張子を入力してください。",
+                "new_file_type": "新しいファイルタイプ",
+                "edit_file_type": "ファイルタイプを編集",
+                "file_types": "ファイルタイプ",
+                "general_settings": "一般設定",
+                "options": "オプション",
+                "enable_auto_organize": "自動仕分けを有効にする",
+                "create_date_folders": "日付フォルダを作成する",
+                "auto_rename_duplicates": "重複ファイルを自動的にリネームして移動",
+                "save": "保存",
+                "add": "追加",
+                "edit": "編集",
+                "delete": "削除",
+                "category": "カテゴリ",
+                "extensions": "拡張子",
+                "language": "言語",
+                "japanese": "日本語",
+                "english": "English",
+                "select_language": "言語選択",
+                "restart_required": "言語を変更するにはアプリケーションを再起動してください。",
+                "other": "その他"
+            },
+            "en": {
+                "app_title": "File Organization System",
+                "directory_settings": "Directory Settings",
+                "source_directory": "Source Directory:",
+                "target_directory": "Target Directory:",
+                "browse": "Browse",
+                "operations": "Operations",
+                "start_auto_organize": "Start Auto Organize",
+                "stop": "Stop",
+                "settings": "Settings",
+                "file_search_separation": "File Search & Separation",
+                "search_pattern": "Search Pattern:",
+                "search": "Search",
+                "separate_files": "Separate Matching Files",
+                "operation_log": "Operation Log",
+                "clear_log": "Clear Log",
+                "ready": "Ready",
+                "processing": "Processing",
+                "organization_complete": "Organization Complete",
+                "organization_stopped": "Organization stopped.",
+                "error_source_target_required": "Please specify source and target directories.",
+                "error_source_required": "Please specify source directory.",
+                "error_target_required": "Please specify target directory.",
+                "error_pattern_required": "Please enter search pattern.",
+                "error_source_not_exists": "Source directory does not exist:",
+                "error_no_files_found": "No files found for organization.",
+                "error_config_save": "Config save error:",
+                "start_organization": "Starting organization:",
+                "files_processed": "files to process...",
+                "organization_complete_files": "Organization complete:",
+                "files_processed_complete": "files processed.",
+                "move_file": "Move:",
+                "search_results": "Search results:",
+                "files_found": "files found",
+                "no_files_found": "No matching files found.",
+                "search_complete": "Search complete:",
+                "pattern_found": "pattern",
+                "files_discovered": "files discovered",
+                "search_error": "Search error:",
+                "separation_complete": "Separation complete:",
+                "files_moved_to": "files moved to",
+                "moved_to": ".",
+                "separation_error": "Separation error:",
+                "separation_error_occurred": "Error occurred during separation:",
+                "files_separated": "files separated.",
+                "save_location": "Save location:",
+                "warning_select_category": "Please select a category to edit.",
+                "warning_select_delete_category": "Please select a category to delete.",
+                "confirm_delete_category": "Category",
+                "confirm_delete_question": "will be deleted. Continue?",
+                "settings_saved": "Settings saved.",
+                "category_name": "Category Name:",
+                "category_name_required": "Please enter category name.",
+                "extensions_comma_separated": "Extensions (comma separated):",
+                "extensions_required": "Please enter extensions.",
+                "new_file_type": "New File Type",
+                "edit_file_type": "Edit File Type",
+                "file_types": "File Types",
+                "general_settings": "General Settings",
+                "options": "Options",
+                "enable_auto_organize": "Enable auto organization",
+                "create_date_folders": "Create date folders",
+                "auto_rename_duplicates": "Auto rename and move duplicate files",
+                "save": "Save",
+                "add": "Add",
+                "edit": "Edit",
+                "delete": "Delete",
+                "category": "Category",
+                "extensions": "Extensions",
+                "language": "Language",
+                "japanese": "日本語",
+                "english": "English",
+                "select_language": "Select Language",
+                "restart_required": "Please restart the application to change language.",
+                "other": "Other"
+            }
+        }
+    
+    def get_text(self, key: str) -> str:
+        """Get text in current language"""
+        return self.languages.get(self.current_language, self.languages["ja"]).get(key, key)
+    
+    def change_language(self, language: str):
+        """Change language"""
+        if language in self.languages:
+            self.current_language = language
+            self.config["language"] = language
+            self.save_config()
+            messagebox.showinfo("Info", self.get_text("restart_required"))
     
     def load_config(self):
         """Load configuration file"""
@@ -53,7 +228,8 @@ class FileOrganizer:
             "recent_directories": [],
             "auto_organize": True,
             "create_date_folders": True,
-            "move_duplicates": True
+            "move_duplicates": True,
+            "language": "ja"
         }
         
         if os.path.exists(self.config_file):
@@ -70,7 +246,7 @@ class FileOrganizer:
             with open(self.config_file, 'w', encoding='utf-8') as f:
                 json.dump(self.config, f, ensure_ascii=False, indent=2)
         except Exception as e:
-            print(f"設定保存エラー: {e}")
+            print(f"{self.get_text('error_config_save')} {e}")
     
     def setup_ui(self):
         """Build UI"""
@@ -85,7 +261,7 @@ class FileOrganizer:
         main_frame.rowconfigure(4, weight=1)
         
         # Title
-        title_label = ttk.Label(main_frame, text="ファイル仕分けシステム", 
+        title_label = ttk.Label(main_frame, text=self.get_text("app_title"), 
                                font=('Arial', 16, 'bold'))
         title_label.grid(row=0, column=0, columnspan=3, pady=(0, 20))
         
@@ -103,46 +279,46 @@ class FileOrganizer:
         
         # Status bar
         self.status_var = tk.StringVar()
-        self.status_var.set("準備完了")
+        self.status_var.set(self.get_text("ready"))
         status_bar = ttk.Label(main_frame, textvariable=self.status_var, 
                               relief=tk.SUNKEN, anchor=tk.W)
         status_bar.grid(row=6, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=(10, 0))
     
     def create_directory_section(self, parent):
         """Create directory selection section"""
-        dir_frame = ttk.LabelFrame(parent, text="ディレクトリ設定", padding="10")
+        dir_frame = ttk.LabelFrame(parent, text=self.get_text("directory_settings"), padding="10")
         dir_frame.grid(row=1, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=(0, 10))
         dir_frame.columnconfigure(1, weight=1)
         
         # Source directory
-        ttk.Label(dir_frame, text="ソースディレクトリ:").grid(row=0, column=0, sticky=tk.W, padx=(0, 10))
+        ttk.Label(dir_frame, text=self.get_text("source_directory")).grid(row=0, column=0, sticky=tk.W, padx=(0, 10))
         source_entry = ttk.Entry(dir_frame, textvariable=self.source_directory, width=50)
         source_entry.grid(row=0, column=1, sticky=(tk.W, tk.E), padx=(0, 10))
-        ttk.Button(dir_frame, text="参照", command=self.browse_source).grid(row=0, column=2)
+        ttk.Button(dir_frame, text=self.get_text("browse"), command=self.browse_source).grid(row=0, column=2)
         
         # Target directory
-        ttk.Label(dir_frame, text="ターゲットディレクトリ:").grid(row=1, column=0, sticky=tk.W, padx=(0, 10), pady=(10, 0))
+        ttk.Label(dir_frame, text=self.get_text("target_directory")).grid(row=1, column=0, sticky=tk.W, padx=(0, 10), pady=(10, 0))
         target_entry = ttk.Entry(dir_frame, textvariable=self.target_directory, width=50)
         target_entry.grid(row=1, column=1, sticky=(tk.W, tk.E), padx=(0, 10), pady=(10, 0))
-        ttk.Button(dir_frame, text="参照", command=self.browse_target).grid(row=1, column=2, pady=(10, 0))
+        ttk.Button(dir_frame, text=self.get_text("browse"), command=self.browse_target).grid(row=1, column=2, pady=(10, 0))
     
     def create_control_section(self, parent):
         """Create control button section"""
-        control_frame = ttk.LabelFrame(parent, text="操作", padding="10")
+        control_frame = ttk.LabelFrame(parent, text=self.get_text("operations"), padding="10")
         control_frame.grid(row=2, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=(0, 10))
         
         # Auto organize button
-        self.organize_btn = ttk.Button(control_frame, text="自動仕分け開始", 
+        self.organize_btn = ttk.Button(control_frame, text=self.get_text("start_auto_organize"), 
                                       command=self.start_auto_organize)
         self.organize_btn.grid(row=0, column=0, padx=(0, 10))
         
         # Stop button
-        self.stop_btn = ttk.Button(control_frame, text="停止", 
+        self.stop_btn = ttk.Button(control_frame, text=self.get_text("stop"), 
                                   command=self.stop_organize, state=tk.DISABLED)
         self.stop_btn.grid(row=0, column=1, padx=(0, 10))
         
         # Settings button
-        ttk.Button(control_frame, text="設定", command=self.open_settings).grid(row=0, column=2, padx=(0, 10))
+        ttk.Button(control_frame, text=self.get_text("settings"), command=self.open_settings).grid(row=0, column=2, padx=(0, 10))
         
         # Progress bar
         self.progress_var = tk.DoubleVar()
@@ -152,20 +328,20 @@ class FileOrganizer:
     
     def create_search_section(self, parent):
         """Create search and separation section"""
-        search_frame = ttk.LabelFrame(parent, text="ファイル検索・分離", padding="10")
+        search_frame = ttk.LabelFrame(parent, text=self.get_text("file_search_separation"), padding="10")
         search_frame.grid(row=3, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=(0, 10))
         search_frame.columnconfigure(1, weight=1)
         
         # Search pattern
-        ttk.Label(search_frame, text="検索パターン:").grid(row=0, column=0, sticky=tk.W, padx=(0, 10))
+        ttk.Label(search_frame, text=self.get_text("search_pattern")).grid(row=0, column=0, sticky=tk.W, padx=(0, 10))
         search_entry = ttk.Entry(search_frame, textvariable=self.search_pattern, width=40)
         search_entry.grid(row=0, column=1, sticky=(tk.W, tk.E), padx=(0, 10))
         
         # Search button
-        ttk.Button(search_frame, text="検索", command=self.search_files).grid(row=0, column=2, padx=(0, 10))
+        ttk.Button(search_frame, text=self.get_text("search"), command=self.search_files).grid(row=0, column=2, padx=(0, 10))
         
         # Separate button
-        ttk.Button(search_frame, text="該当ファイルを分離", command=self.separate_files).grid(row=0, column=3)
+        ttk.Button(search_frame, text=self.get_text("separate_files"), command=self.separate_files).grid(row=0, column=3)
         
         # Search result display
         result_frame = ttk.Frame(search_frame)
@@ -177,7 +353,7 @@ class FileOrganizer:
     
     def create_log_section(self, parent):
         """Create log display section"""
-        log_frame = ttk.LabelFrame(parent, text="操作ログ", padding="10")
+        log_frame = ttk.LabelFrame(parent, text=self.get_text("operation_log"), padding="10")
         log_frame.grid(row=4, column=0, columnspan=3, sticky=(tk.W, tk.E, tk.N, tk.S), pady=(0, 10))
         log_frame.columnconfigure(0, weight=1)
         log_frame.rowconfigure(0, weight=1)
@@ -186,18 +362,18 @@ class FileOrganizer:
         self.log_text.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         
         # Log clear button
-        ttk.Button(log_frame, text="ログクリア", command=self.clear_log).grid(row=1, column=0, pady=(10, 0))
+        ttk.Button(log_frame, text=self.get_text("clear_log"), command=self.clear_log).grid(row=1, column=0, pady=(10, 0))
     
     def browse_source(self):
         """Select source directory"""
-        directory = filedialog.askdirectory(title="ソースディレクトリを選択")
+        directory = filedialog.askdirectory(title=self.get_text("source_directory"))
         if directory:
             self.source_directory.set(directory)
             self.add_recent_directory(directory)
     
     def browse_target(self):
         """Select target directory"""
-        directory = filedialog.askdirectory(title="ターゲットディレクトリを選択")
+        directory = filedialog.askdirectory(title=self.get_text("target_directory"))
         if directory:
             self.target_directory.set(directory)
             self.add_recent_directory(directory)
@@ -218,7 +394,7 @@ class FileOrganizer:
     def start_auto_organize(self):
         """Start auto organization"""
         if not self.source_directory.get() or not self.target_directory.get():
-            messagebox.showerror("エラー", "ソースディレクトリとターゲットディレクトリを指定してください。")
+            messagebox.showerror("Error", self.get_text("error_source_target_required"))
             return
         
         if self.organizing:
@@ -239,7 +415,7 @@ class FileOrganizer:
         self.organizing = False
         self.organize_btn.config(state=tk.NORMAL)
         self.stop_btn.config(state=tk.DISABLED)
-        self.log_message("仕分けを停止しました。")
+        self.log_message(self.get_text("organization_stopped"))
     
     def auto_organize_files(self):
         """Auto organize files"""
@@ -248,7 +424,7 @@ class FileOrganizer:
             target_path = Path(self.target_directory.get())
             
             if not source_path.exists():
-                self.log_message(f"エラー: ソースディレクトリが存在しません: {source_path}")
+                self.log_message(f"{self.get_text('error_source_not_exists')} {source_path}")
                 return
             
             # Create target directory
@@ -259,10 +435,10 @@ class FileOrganizer:
             total_files = len(files)
             
             if total_files == 0:
-                self.log_message("仕分け対象のファイルが見つかりません。")
+                self.log_message(self.get_text("error_no_files_found"))
                 return
             
-            self.log_message(f"仕分け開始: {total_files}個のファイルを処理します...")
+            self.log_message(f"{self.get_text('start_organization')} {total_files} {self.get_text('files_processed')}")
             
             processed = 0
             for file_path in files:
@@ -274,19 +450,19 @@ class FileOrganizer:
                     processed += 1
                     progress = (processed / total_files) * 100
                     self.progress_var.set(progress)
-                    self.status_var.set(f"処理中: {processed}/{total_files}")
+                    self.status_var.set(f"{self.get_text('processing')}: {processed}/{total_files}")
                     
                 except Exception as e:
-                    self.log_message(f"エラー ({file_path.name}): {e}")
+                    self.log_message(f"Error ({file_path.name}): {e}")
             
             if self.organizing:
-                self.log_message(f"仕分け完了: {processed}個のファイルを処理しました。")
-                self.status_var.set("仕分け完了")
+                self.log_message(f"{self.get_text('organization_complete_files')} {processed} {self.get_text('files_processed_complete')}")
+                self.status_var.set(self.get_text("organization_complete"))
             else:
-                self.log_message("仕分けが停止されました。")
+                self.log_message(self.get_text("organization_stopped"))
                 
         except Exception as e:
-            self.log_message(f"エラー: {e}")
+            self.log_message(f"Error: {e}")
         finally:
             self.organizing = False
             self.organize_btn.config(state=tk.NORMAL)
@@ -297,7 +473,7 @@ class FileOrganizer:
         file_extension = file_path.suffix.lower()
         
         # Determine file type
-        category = "その他"
+        category = self.get_text("other")
         for cat, extensions in self.config["file_types"].items():
             if file_extension in extensions:
                 category = cat
@@ -327,17 +503,17 @@ class FileOrganizer:
                 counter += 1
         
         shutil.move(str(file_path), str(destination))
-        self.log_message(f"移動: {file_path.name} → {category}/{destination.name}")
+        self.log_message(f"{self.get_text('move_file')} {file_path.name} → {category}/{destination.name}")
     
     def search_files(self):
         """Search files"""
         if not self.source_directory.get():
-            messagebox.showerror("エラー", "ソースディレクトリを指定してください。")
+            messagebox.showerror("Error", self.get_text("error_source_required"))
             return
         
         pattern = self.search_pattern.get()
         if not pattern:
-            messagebox.showerror("エラー", "検索パターンを入力してください。")
+            messagebox.showerror("Error", self.get_text("error_pattern_required"))
             return
         
         try:
@@ -353,26 +529,26 @@ class FileOrganizer:
             # Display results
             self.result_text.delete(1.0, tk.END)
             if matching_files:
-                self.result_text.insert(tk.END, f"検索結果: {len(matching_files)}個のファイルが見つかりました\n\n")
+                self.result_text.insert(tk.END, f"{self.get_text('search_results')} {len(matching_files)} {self.get_text('files_found')}\n\n")
                 for file_path in matching_files:
                     self.result_text.insert(tk.END, f"• {file_path.name}\n")
             else:
-                self.result_text.insert(tk.END, "該当するファイルが見つかりませんでした。")
+                self.result_text.insert(tk.END, self.get_text("no_files_found"))
             
-            self.log_message(f"検索完了: パターン '{pattern}' で {len(matching_files)}個のファイルを発見")
+            self.log_message(f"{self.get_text('search_complete')} {self.get_text('pattern_found')} '{pattern}' {len(matching_files)} {self.get_text('files_discovered')}")
             
         except Exception as e:
-            self.log_message(f"検索エラー: {e}")
+            self.log_message(f"{self.get_text('search_error')} {e}")
     
     def separate_files(self):
         """Separate matching files"""
         if not self.target_directory.get():
-            messagebox.showerror("エラー", "ターゲットディレクトリを指定してください。")
+            messagebox.showerror("Error", self.get_text("error_target_required"))
             return
         
         pattern = self.search_pattern.get()
         if not pattern:
-            messagebox.showerror("エラー", "検索パターンを入力してください。")
+            messagebox.showerror("Error", self.get_text("error_pattern_required"))
             return
         
         try:
@@ -401,16 +577,16 @@ class FileOrganizer:
                         shutil.move(str(file_path), str(destination))
                         moved_count += 1
             
-            self.log_message(f"分離完了: {moved_count}個のファイルを {separate_path.name} に移動しました。")
-            messagebox.showinfo("完了", f"{moved_count}個のファイルを分離しました。\n保存先: {separate_path}")
+            self.log_message(f"{self.get_text('separation_complete')} {moved_count} {self.get_text('files_moved_to')} {separate_path.name} {self.get_text('moved_to')}")
+            messagebox.showinfo("Complete", f"{moved_count} {self.get_text('files_separated')}\n{self.get_text('save_location')} {separate_path}")
             
         except Exception as e:
-            self.log_message(f"分離エラー: {e}")
-            messagebox.showerror("エラー", f"分離中にエラーが発生しました: {e}")
+            self.log_message(f"{self.get_text('separation_error')} {e}")
+            messagebox.showerror("Error", f"{self.get_text('separation_error_occurred')} {e}")
     
     def open_settings(self):
         """Open settings window"""
-        SettingsWindow(self.root, self.config, self.save_config)
+        SettingsWindow(self.root, self.config, self.save_config, self)
     
     def log_message(self, message: str):
         """Add log message"""
@@ -431,7 +607,7 @@ class FileOrganizer:
 
 
 class SettingsWindow:
-    def __init__(self, parent, config, save_callback):
+    def __init__(self, parent, config, save_callback, app_instance=None):
         self.window = tk.Toplevel(parent)
         self.window.title("設定")
         self.window.geometry("600x500")
@@ -440,6 +616,7 @@ class SettingsWindow:
         
         self.config = config
         self.save_callback = save_callback
+        self.app_instance = app_instance
         
         self.setup_ui()
     
@@ -453,6 +630,9 @@ class SettingsWindow:
         
         # General settings
         self.create_general_tab(notebook)
+        
+        # Language settings
+        self.create_language_tab(notebook)
     
     def create_file_types_tab(self, notebook):
         """Create file types settings tab"""
@@ -511,6 +691,26 @@ class SettingsWindow:
         
         # Save button
         ttk.Button(frame, text="保存", command=self.save_settings).pack(pady=20)
+    
+    def create_language_tab(self, notebook):
+        """Create language settings tab"""
+        frame = ttk.Frame(notebook)
+        notebook.add(frame, text="言語設定")
+        
+        # Language options
+        lang_frame = ttk.LabelFrame(frame, text="言語選択", padding="10")
+        lang_frame.pack(fill=tk.X, padx=10, pady=10)
+        
+        # Language selection
+        self.language_var = tk.StringVar(value=self.config.get("language", "ja"))
+        
+        ttk.Radiobutton(lang_frame, text="日本語", variable=self.language_var, 
+                       value="ja").pack(anchor=tk.W)
+        ttk.Radiobutton(lang_frame, text="English", variable=self.language_var, 
+                       value="en").pack(anchor=tk.W)
+        
+        # Save button
+        ttk.Button(frame, text="保存", command=self.save_language_settings).pack(pady=20)
     
     def load_file_types(self):
         """Load file types into tree view"""
@@ -571,6 +771,18 @@ class SettingsWindow:
         
         self.save_callback()
         messagebox.showinfo("完了", "設定を保存しました。")
+        self.window.destroy()
+    
+    def save_language_settings(self):
+        """Save language settings"""
+        new_language = self.language_var.get()
+        if new_language != self.config.get("language", "ja"):
+            self.config["language"] = new_language
+            self.save_callback()
+            if self.app_instance:
+                self.app_instance.change_language(new_language)
+            else:
+                messagebox.showinfo("Info", "言語を変更するにはアプリケーションを再起動してください。")
         self.window.destroy()
 
 
