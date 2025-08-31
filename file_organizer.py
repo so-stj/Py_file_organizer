@@ -411,9 +411,8 @@ class FileOrganizer:
     def update_file_types_for_language(self):
         """Update file types based on current language"""
         if self.current_language in self.file_type_categories:
-            # Only update if file_types is empty or if language changed
-            if not self.config["file_types"] or self.config.get("language") != self.current_language:
-                self.config["file_types"] = self.file_type_categories[self.current_language].copy()
+            # Always update file types when language changes
+            self.config["file_types"] = self.file_type_categories[self.current_language].copy()
     
     def load_config(self):
         """Load configuration file"""
@@ -434,6 +433,10 @@ class FileOrganizer:
                     self.config.update(saved_config)
             except:
                 pass
+        
+        # Update file types based on current language after loading config
+        if self.current_language in self.file_type_categories:
+            self.config["file_types"] = self.file_type_categories[self.current_language].copy()
     
     def save_config(self):
         """Save configuration file"""
@@ -928,7 +931,12 @@ class SettingsWindow:
         for item in self.tree.get_children():
             self.tree.delete(item)
         
-        for category, extensions in self.config["file_types"].items():
+        # Get current file types from app instance if available
+        file_types = self.config["file_types"]
+        if self.app_instance and self.app_instance.current_language in self.app_instance.file_type_categories:
+            file_types = self.app_instance.file_type_categories[self.app_instance.current_language]
+        
+        for category, extensions in file_types.items():
             item = self.tree.insert("", tk.END, text=category, values=(category, ", ".join(extensions)))
             for ext in extensions:
                 self.tree.insert(item, tk.END, text=ext, values=("", ext))
@@ -989,6 +997,9 @@ class SettingsWindow:
         new_language = self.language_var.get()
         if new_language != self.config.get("language", "ja"):
             self.config["language"] = new_language
+            # Update file types for new language
+            if self.app_instance and new_language in self.app_instance.file_type_categories:
+                self.config["file_types"] = self.app_instance.file_type_categories[new_language].copy()
             self.save_callback()
             if self.app_instance:
                 self.app_instance.change_language(new_language)
