@@ -34,7 +34,7 @@ class FileOrganizer:
             except Exception as e:
                 print(f"Windows config directory creation error: {e}")
                 # Fallback to current directory
-                self.config_file = "file_organizer_config.json"
+        self.config_file = "file_organizer_config.json"
                 print(f"Fallback config file path: {self.config_file}")
         else:  # Linux/Mac
             self.config_file = "file_organizer_config.json"
