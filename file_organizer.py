@@ -386,7 +386,17 @@ class FileOrganizer:
         if language in self.languages:
             self.current_language = language
             self.config["language"] = language
-            self.update_file_types_for_language()
+            
+            # Check if this is after a reset (language_selected is False)
+            if not self.config.get("language_selected", True):
+                print("Language change after reset: using default categories only")
+                # After reset, don't preserve any categories from previous language
+                if language in self.file_type_categories:
+                    self.config["file_types"] = self.file_type_categories[language].copy()
+            else:
+                # Normal language change: use update_file_types_for_language
+                self.update_file_types_for_language()
+            
             self.save_config()
             messagebox.showinfo("Info", self.get_text("restart_required"))
     
@@ -1352,25 +1362,34 @@ class SettingsWindow:
         """Save language settings"""
         new_language = self.language_var.get()
         if new_language != self.config.get("language", "ja"):
-            # Store current custom categories before language change
-            current_file_types = self.config.get("file_types", {})
-            custom_categories = {}
-            
-            # Find custom categories (not in default for current language)
-            if self.app_instance and self.app_instance.current_language in self.app_instance.file_type_categories:
-                default_categories = self.app_instance.file_type_categories[self.app_instance.current_language]
-                for category, extensions in current_file_types.items():
-                    if category not in default_categories:
-                        custom_categories[category] = extensions
-            
-            self.config["language"] = new_language
-            
-            # Update file types for new language, preserving custom categories
-            if self.app_instance and new_language in self.app_instance.file_type_categories:
-                new_default_types = self.app_instance.file_type_categories[new_language].copy()
-                # Merge with custom categories
-                new_default_types.update(custom_categories)
-                self.config["file_types"] = new_default_types
+            # Check if this is after a reset (language_selected is False)
+            if not self.config.get("language_selected", True):
+                print("Language change after reset: using default categories only")
+                # After reset, don't preserve any categories from previous language
+                self.config["language"] = new_language
+                if self.app_instance and new_language in self.app_instance.file_type_categories:
+                    self.config["file_types"] = self.app_instance.file_type_categories[new_language].copy()
+            else:
+                # Normal language change: preserve only truly custom categories
+                print("Normal language change: preserving custom categories")
+                current_file_types = self.config.get("file_types", {})
+                custom_categories = {}
+                
+                # Find custom categories (not in default for current language)
+                if self.app_instance and self.app_instance.current_language in self.app_instance.file_type_categories:
+                    default_categories = self.app_instance.file_type_categories[self.app_instance.current_language]
+                    for category, extensions in current_file_types.items():
+                        if category not in default_categories:
+                            custom_categories[category] = extensions
+                
+                self.config["language"] = new_language
+                
+                # Update file types for new language, preserving custom categories
+                if self.app_instance and new_language in self.app_instance.file_type_categories:
+                    new_default_types = self.app_instance.file_type_categories[new_language].copy()
+                    # Merge with custom categories
+                    new_default_types.update(custom_categories)
+                    self.config["file_types"] = new_default_types
             
             self.save_callback()
             if self.app_instance:
