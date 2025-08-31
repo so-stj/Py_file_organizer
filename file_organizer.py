@@ -367,21 +367,21 @@ class FileOrganizer:
         ja_frame = ttk.Frame(main_frame)
         ja_frame.pack(fill=tk.X, pady=5)
         ttk.Radiobutton(ja_frame, text="日本語", variable=self.language_var, 
-                       value="ja", font=('Arial', 11)).pack(side=tk.LEFT)
+                       value="ja").pack(side=tk.LEFT)
         ttk.Label(ja_frame, text="Japanese", font=('Arial', 10)).pack(side=tk.LEFT, padx=(10, 0))
         
         # English option
         en_frame = ttk.Frame(main_frame)
         en_frame.pack(fill=tk.X, pady=5)
         ttk.Radiobutton(en_frame, text="English", variable=self.language_var, 
-                       value="en", font=('Arial', 11)).pack(side=tk.LEFT)
+                       value="en").pack(side=tk.LEFT)
         ttk.Label(en_frame, text="英語", font=('Arial', 10)).pack(side=tk.LEFT, padx=(10, 0))
         
         # Swedish option
         sv_frame = ttk.Frame(main_frame)
         sv_frame.pack(fill=tk.X, pady=5)
         ttk.Radiobutton(sv_frame, text="Svenska", variable=self.language_var, 
-                       value="sv", font=('Arial', 11)).pack(side=tk.LEFT)
+                       value="sv").pack(side=tk.LEFT)
         ttk.Label(sv_frame, text="スウェーデン語", font=('Arial', 10)).pack(side=tk.LEFT, padx=(10, 0))
         
         # Description
