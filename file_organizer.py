@@ -511,10 +511,14 @@ class FileOrganizer:
             # Only update if file_types is empty (first run)
             if not self.config.get("file_types"):
                 self.config["file_types"] = self.file_type_categories[self.current_language].copy()
+                print("初回起動: デフォルトカテゴリーを設定")
             else:
                 # Preserve existing categories and merge with defaults
                 existing_file_types = self.config.get("file_types", {})
                 default_file_types = self.file_type_categories[self.current_language].copy()
+                
+                print(f"既存のカテゴリー: {list(existing_file_types.keys())}")
+                print(f"デフォルトカテゴリー: {list(default_file_types.keys())}")
                 
                 # Find custom categories (not in default)
                 custom_categories = {}
@@ -522,10 +526,14 @@ class FileOrganizer:
                     if category not in default_file_types:
                         custom_categories[category] = extensions
                 
+                print(f"カスタムカテゴリー: {list(custom_categories.keys())}")
+                
                 # Merge default and custom
                 merged_file_types = default_file_types.copy()
                 merged_file_types.update(custom_categories)
                 self.config["file_types"] = merged_file_types
+                
+                print(f"マージ後のカテゴリー: {list(self.config['file_types'].keys())}")
         
         # Mark config as loaded
         self.config_loaded = True
@@ -1070,10 +1078,9 @@ class SettingsWindow:
         for item in self.tree.get_children():
             self.tree.delete(item)
         
-        # Get current file types from app instance if available
+        # Always use config file types to show all categories including custom ones
         file_types = self.config["file_types"]
-        if self.app_instance and self.app_instance.current_language in self.app_instance.file_type_categories:
-            file_types = self.app_instance.file_type_categories[self.app_instance.current_language]
+        print(f"設定画面で表示するカテゴリー: {list(file_types.keys())}")
         
         for category, extensions in file_types.items():
             item = self.tree.insert("", tk.END, text=category, values=(category, ", ".join(extensions)))
@@ -1085,13 +1092,19 @@ class SettingsWindow:
         dialog = FileTypeDialog(self.window, self.get_text("new_file_type"), app_instance=self.app_instance)
         if dialog.result:
             category, extensions = dialog.result
+            print(f"カテゴリー追加: {category} - {extensions}")
+            
+            # Update config file types
             self.config["file_types"][category] = extensions
+            
             # Also update the app instance file types
             if self.app_instance and self.app_instance.current_language in self.app_instance.file_type_categories:
                 self.app_instance.file_type_categories[self.app_instance.current_language][category] = extensions
+            
             self.load_file_types()
             # Save the configuration
             self.save_callback()
+            print(f"追加後のカテゴリー数: {len(self.config['file_types'])}")
     
     def edit_file_type(self):
         """Edit file type"""

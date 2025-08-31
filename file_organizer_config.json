@@ -68,6 +68,11 @@
       ".cpp",
       ".c",
       ".php"
+    ],
+    "テストカテゴリー": [
+      ".test",
+      ".custom",
+      ".demo"
     ]
   },
   "recent_directories": [],
