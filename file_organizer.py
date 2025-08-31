@@ -1002,7 +1002,13 @@ class SettingsWindow:
         if category in self.config["file_types"]:
             if messagebox.askyesno("Confirm", f"{self.get_text('confirm_delete_category')} '{category}' {self.get_text('confirm_delete_question')}"):
                 del self.config["file_types"][category]
+                # Also update the app instance file types
+                if self.app_instance and self.app_instance.current_language in self.app_instance.file_type_categories:
+                    if category in self.app_instance.file_type_categories[self.app_instance.current_language]:
+                        del self.app_instance.file_type_categories[self.app_instance.current_language][category]
                 self.load_file_types()
+                # Save the configuration
+                self.save_callback()
     
     def save_settings(self):
         """Save settings"""
