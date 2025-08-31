@@ -415,8 +415,23 @@ class FileOrganizer:
     def update_file_types_for_language(self):
         """Update file types based on current language"""
         if self.current_language in self.file_type_categories:
-            # Always update file types when language changes
-            self.config["file_types"] = self.file_type_categories[self.current_language].copy()
+            # Update file types when language changes, but preserve custom additions
+            default_file_types = self.file_type_categories[self.current_language].copy()
+            
+            # If there are existing custom file types, merge them
+            if self.config.get("file_types"):
+                # Find custom categories (not in default)
+                custom_categories = {}
+                for category, extensions in self.config["file_types"].items():
+                    if category not in default_file_types:
+                        custom_categories[category] = extensions
+                
+                # Merge default and custom
+                self.config["file_types"] = default_file_types.copy()
+                self.config["file_types"].update(custom_categories)
+            else:
+                # First time, just use default
+                self.config["file_types"] = default_file_types
     
     def load_config(self):
         """Load configuration file"""
