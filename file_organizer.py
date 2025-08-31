@@ -52,6 +52,9 @@ class FileOrganizer:
     
     def setup_language(self):
         """Setup language dictionaries"""
+        # Initialize current language (will be updated after config load)
+        self.current_language = "ja"
+        
         # File type categories for different languages
         self.file_type_categories = {
             "ja": {
@@ -434,6 +437,9 @@ class FileOrganizer:
                     self.config.update(saved_config)
             except:
                 pass
+        
+        # Set current language from config
+        self.current_language = self.config.get("language", "ja")
         
         # Update file types based on current language after loading config
         if self.current_language in self.file_type_categories:
