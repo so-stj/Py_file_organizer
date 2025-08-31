@@ -1078,6 +1078,8 @@ class SettingsWindow:
     def reset_to_defaults(self):
         """Reset all settings to defaults"""
         if messagebox.askyesno("Confirm", self.get_text("confirm_reset_defaults")):
+            print("初期化を実行中...")
+            
             # Reset to default configuration
             self.config = {
                 "file_types": {},
@@ -1088,8 +1090,20 @@ class SettingsWindow:
                 "language": "ja",
                 "language_selected": False
             }
+            
+            # Also reset app instance settings
+            if self.app_instance:
+                self.app_instance.current_language = "ja"
+                # Reset app instance file types to default
+                if "ja" in self.app_instance.file_type_categories:
+                    self.app_instance.file_type_categories["ja"] = self.app_instance.file_type_categories["ja"].copy()
+            
             self.save_callback()
+            print("初期化完了: 設定ファイルを保存しました")
             messagebox.showinfo("Info", self.get_text("settings_reset"))
+            
+            # Close settings window to force restart
+            self.window.destroy()
     
     def load_file_types(self):
         """Load file types into tree view"""
