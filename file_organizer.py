@@ -30,6 +30,13 @@ class FileOrganizer:
         self.current_language = self.config.get("language", "ja")
         self.setup_language()
         
+        # Check if this is first run and show language selection
+        if not self.config.get("language_selected", False):
+            self.show_language_selection()
+        
+        # Update file types based on current language
+        self.update_file_types_for_language()
+        
         # Variables
         self.source_directory = tk.StringVar()
         self.target_directory = tk.StringVar()
@@ -44,6 +51,43 @@ class FileOrganizer:
     
     def setup_language(self):
         """Setup language dictionaries"""
+        # File type categories for different languages
+        self.file_type_categories = {
+            "ja": {
+                "画像": [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".webp"],
+                "動画": [".mp4", ".avi", ".mov", ".wmv", ".flv", ".mkv", ".webm"],
+                "音声": [".mp3", ".wav", ".flac", ".aac", ".ogg", ".wma"],
+                "文書": [".pdf", ".doc", ".docx", ".txt", ".rtf", ".odt"],
+                "スプレッドシート": [".xls", ".xlsx", ".csv", ".ods"],
+                "プレゼンテーション": [".ppt", ".pptx", ".odp"],
+                "アーカイブ": [".zip", ".rar", ".7z", ".tar", ".gz"],
+                "実行ファイル": [".exe", ".msi", ".dmg", ".deb", ".rpm"],
+                "コード": [".py", ".js", ".html", ".css", ".java", ".cpp", ".c", ".php"]
+            },
+            "en": {
+                "Images": [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".webp"],
+                "Videos": [".mp4", ".avi", ".mov", ".wmv", ".flv", ".mkv", ".webm"],
+                "Audio": [".mp3", ".wav", ".flac", ".aac", ".ogg", ".wma"],
+                "Documents": [".pdf", ".doc", ".docx", ".txt", ".rtf", ".odt"],
+                "Spreadsheets": [".xls", ".xlsx", ".csv", ".ods"],
+                "Presentations": [".ppt", ".pptx", ".odp"],
+                "Archives": [".zip", ".rar", ".7z", ".tar", ".gz"],
+                "Executables": [".exe", ".msi", ".dmg", ".deb", ".rpm"],
+                "Code": [".py", ".js", ".html", ".css", ".java", ".cpp", ".c", ".php"]
+            },
+            "sv": {
+                "Bilder": [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".webp"],
+                "Videor": [".mp4", ".avi", ".mov", ".wmv", ".flv", ".mkv", ".webm"],
+                "Ljud": [".mp3", ".wav", ".flac", ".aac", ".ogg", ".wma"],
+                "Dokument": [".pdf", ".doc", ".docx", ".txt", ".rtf", ".odt"],
+                "Kalkylblad": [".xls", ".xlsx", ".csv", ".ods"],
+                "Presentationer": [".ppt", ".pptx", ".odp"],
+                "Arkiv": [".zip", ".rar", ".7z", ".tar", ".gz"],
+                "Körbara filer": [".exe", ".msi", ".dmg", ".deb", ".rpm"],
+                "Kod": [".py", ".js", ".html", ".css", ".java", ".cpp", ".c", ".php"]
+            }
+        }
+        
         self.languages = {
             "ja": {
                 "app_title": "ファイル仕分けシステム",
@@ -117,6 +161,7 @@ class FileOrganizer:
                 "language": "言語",
                 "japanese": "日本語",
                 "english": "English",
+                "swedish": "Svenska",
                 "select_language": "言語選択",
                 "restart_required": "言語を変更するにはアプリケーションを再起動してください。",
                 "other": "その他"
@@ -193,9 +238,87 @@ class FileOrganizer:
                 "language": "Language",
                 "japanese": "日本語",
                 "english": "English",
+                "swedish": "Svenska",
                 "select_language": "Select Language",
                 "restart_required": "Please restart the application to change language.",
                 "other": "Other"
+            },
+            "sv": {
+                "app_title": "Filorganiseringssystem",
+                "directory_settings": "Kataloginställningar",
+                "source_directory": "Källkatalog:",
+                "target_directory": "Målkatalog:",
+                "browse": "Bläddra",
+                "operations": "Operationer",
+                "start_auto_organize": "Starta automatisk organisering",
+                "stop": "Stoppa",
+                "settings": "Inställningar",
+                "file_search_separation": "Filsökning & Separation",
+                "search_pattern": "Sökmönster:",
+                "search": "Sök",
+                "separate_files": "Separera matchande filer",
+                "operation_log": "Operationslogg",
+                "clear_log": "Rensa logg",
+                "ready": "Redo",
+                "processing": "Bearbetar",
+                "organization_complete": "Organisering slutförd",
+                "organization_stopped": "Organisering stoppad.",
+                "error_source_target_required": "Ange käll- och målkatalog.",
+                "error_source_required": "Ange källkatalog.",
+                "error_target_required": "Ange målkatalog.",
+                "error_pattern_required": "Ange sökmönster.",
+                "error_source_not_exists": "Källkatalog finns inte:",
+                "error_no_files_found": "Inga filer hittades för organisering.",
+                "error_config_save": "Konfigurationssparingsfel:",
+                "start_organization": "Startar organisering:",
+                "files_processed": "filer att bearbeta...",
+                "organization_complete_files": "Organisering slutförd:",
+                "files_processed_complete": "filer bearbetade.",
+                "move_file": "Flytta:",
+                "search_results": "Sökresultat:",
+                "files_found": "filer hittade",
+                "no_files_found": "Inga matchande filer hittades.",
+                "search_complete": "Sökning slutförd:",
+                "pattern_found": "mönster",
+                "files_discovered": "filer upptäckta",
+                "search_error": "Sökfel:",
+                "separation_complete": "Separation slutförd:",
+                "files_moved_to": "filer flyttade till",
+                "moved_to": ".",
+                "separation_error": "Separationsfel:",
+                "separation_error_occurred": "Fel uppstod under separation:",
+                "files_separated": "filer separerade.",
+                "save_location": "Sparplats:",
+                "warning_select_category": "Välj en kategori att redigera.",
+                "warning_select_delete_category": "Välj en kategori att ta bort.",
+                "confirm_delete_category": "Kategori",
+                "confirm_delete_question": "kommer att tas bort. Fortsätt?",
+                "settings_saved": "Inställningar sparade.",
+                "category_name": "Kategorinamn:",
+                "category_name_required": "Ange kategorinamn.",
+                "extensions_comma_separated": "Filtillägg (kommaseparerade):",
+                "extensions_required": "Ange filtillägg.",
+                "new_file_type": "Ny filtyp",
+                "edit_file_type": "Redigera filtyp",
+                "file_types": "Filtyper",
+                "general_settings": "Allmänna inställningar",
+                "options": "Alternativ",
+                "enable_auto_organize": "Aktivera automatisk organisering",
+                "create_date_folders": "Skapa datummappar",
+                "auto_rename_duplicates": "Byt namn och flytta duplicerade filer automatiskt",
+                "save": "Spara",
+                "add": "Lägg till",
+                "edit": "Redigera",
+                "delete": "Ta bort",
+                "category": "Kategori",
+                "extensions": "Filtillägg",
+                "language": "Språk",
+                "japanese": "日本語",
+                "english": "English",
+                "swedish": "Svenska",
+                "select_language": "Välj språk",
+                "restart_required": "Starta om applikationen för att ändra språk.",
+                "other": "Övrigt"
             }
         }
     
@@ -208,28 +331,100 @@ class FileOrganizer:
         if language in self.languages:
             self.current_language = language
             self.config["language"] = language
+            self.update_file_types_for_language()
             self.save_config()
             messagebox.showinfo("Info", self.get_text("restart_required"))
+    
+    def show_language_selection(self):
+        """Show language selection dialog on first run"""
+        # Create language selection dialog
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Language Selection / 言語選択")
+        dialog.geometry("400x300")
+        dialog.transient(self.root)
+        dialog.grab_set()
+        dialog.resizable(False, False)
+        
+        # Center the dialog
+        dialog.update_idletasks()
+        x = (dialog.winfo_screenwidth() // 2) - (400 // 2)
+        y = (dialog.winfo_screenheight() // 2) - (300 // 2)
+        dialog.geometry(f"400x300+{x}+{y}")
+        
+        # Main frame
+        main_frame = ttk.Frame(dialog, padding="20")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Title
+        title_label = ttk.Label(main_frame, text="Select your preferred language\nお好みの言語を選択してください", 
+                               font=('Arial', 12, 'bold'), justify=tk.CENTER)
+        title_label.pack(pady=(0, 20))
+        
+        # Language selection
+        self.language_var = tk.StringVar(value=self.current_language)
+        
+        # Japanese option
+        ja_frame = ttk.Frame(main_frame)
+        ja_frame.pack(fill=tk.X, pady=5)
+        ttk.Radiobutton(ja_frame, text="日本語", variable=self.language_var, 
+                       value="ja", font=('Arial', 11)).pack(side=tk.LEFT)
+        ttk.Label(ja_frame, text="Japanese", font=('Arial', 10)).pack(side=tk.LEFT, padx=(10, 0))
+        
+        # English option
+        en_frame = ttk.Frame(main_frame)
+        en_frame.pack(fill=tk.X, pady=5)
+        ttk.Radiobutton(en_frame, text="English", variable=self.language_var, 
+                       value="en", font=('Arial', 11)).pack(side=tk.LEFT)
+        ttk.Label(en_frame, text="英語", font=('Arial', 10)).pack(side=tk.LEFT, padx=(10, 0))
+        
+        # Swedish option
+        sv_frame = ttk.Frame(main_frame)
+        sv_frame.pack(fill=tk.X, pady=5)
+        ttk.Radiobutton(sv_frame, text="Svenska", variable=self.language_var, 
+                       value="sv", font=('Arial', 11)).pack(side=tk.LEFT)
+        ttk.Label(sv_frame, text="スウェーデン語", font=('Arial', 10)).pack(side=tk.LEFT, padx=(10, 0))
+        
+        # Description
+        desc_label = ttk.Label(main_frame, text="You can change the language later in Settings.\n後で設定から言語を変更できます。", 
+                              font=('Arial', 9), justify=tk.CENTER, foreground='gray')
+        desc_label.pack(pady=(20, 0))
+        
+        # Buttons
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(fill=tk.X, pady=(20, 0))
+        
+        def confirm_language():
+            selected_language = self.language_var.get()
+            self.current_language = selected_language
+            self.config["language"] = selected_language
+            self.config["language_selected"] = True
+            self.save_config()
+            dialog.destroy()
+            # Update window title
+            self.root.title(self.get_text("app_title"))
+        
+        ttk.Button(btn_frame, text="OK / 決定", command=confirm_language).pack(side=tk.RIGHT)
+        
+        # Make dialog modal
+        dialog.wait_window()
+    
+    def update_file_types_for_language(self):
+        """Update file types based on current language"""
+        if self.current_language in self.file_type_categories:
+            # Only update if file_types is empty or if language changed
+            if not self.config["file_types"] or self.config.get("language") != self.current_language:
+                self.config["file_types"] = self.file_type_categories[self.current_language].copy()
     
     def load_config(self):
         """Load configuration file"""
         self.config = {
-            "file_types": {
-                "画像": [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".webp"],
-                "動画": [".mp4", ".avi", ".mov", ".wmv", ".flv", ".mkv", ".webm"],
-                "音声": [".mp3", ".wav", ".flac", ".aac", ".ogg", ".wma"],
-                "文書": [".pdf", ".doc", ".docx", ".txt", ".rtf", ".odt"],
-                "スプレッドシート": [".xls", ".xlsx", ".csv", ".ods"],
-                "プレゼンテーション": [".ppt", ".pptx", ".odp"],
-                "アーカイブ": [".zip", ".rar", ".7z", ".tar", ".gz"],
-                "実行ファイル": [".exe", ".msi", ".dmg", ".deb", ".rpm"],
-                "コード": [".py", ".js", ".html", ".css", ".java", ".cpp", ".c", ".php"]
-            },
+            "file_types": {},
             "recent_directories": [],
             "auto_organize": True,
             "create_date_folders": True,
             "move_duplicates": True,
-            "language": "ja"
+            "language": "ja",
+            "language_selected": False
         }
         
         if os.path.exists(self.config_file):
@@ -718,9 +913,15 @@ class SettingsWindow:
                        value="ja").pack(anchor=tk.W)
         ttk.Radiobutton(lang_frame, text=self.get_text("english"), variable=self.language_var, 
                        value="en").pack(anchor=tk.W)
+        ttk.Radiobutton(lang_frame, text=self.get_text("swedish"), variable=self.language_var, 
+                       value="sv").pack(anchor=tk.W)
         
         # Save button
-        ttk.Button(frame, text=self.get_text("save"), command=self.save_language_settings).pack(pady=20)
+        ttk.Button(frame, text=self.get_text("save"), command=self.save_language_settings).pack(pady=(20, 10))
+        
+        # Reset language selection button
+        ttk.Button(frame, text="Reset Language Selection / 言語選択をリセット", 
+                  command=self.reset_language_selection).pack(pady=(0, 20))
     
     def load_file_types(self):
         """Load file types into tree view"""
@@ -794,6 +995,13 @@ class SettingsWindow:
             else:
                 messagebox.showinfo("Info", self.get_text("restart_required"))
         self.window.destroy()
+    
+    def reset_language_selection(self):
+        """Reset language selection to show dialog on next startup"""
+        if messagebox.askyesno("Confirm", "言語選択をリセットしますか？\n次回起動時に言語選択ダイアログが表示されます。\n\nReset language selection?\nLanguage selection dialog will appear on next startup."):
+            self.config["language_selected"] = False
+            self.save_callback()
+            messagebox.showinfo("Info", "言語選択がリセットされました。\n次回起動時に言語選択ダイアログが表示されます。\n\nLanguage selection has been reset.\nLanguage selection dialog will appear on next startup.")
 
 
 class FileTypeDialog:
