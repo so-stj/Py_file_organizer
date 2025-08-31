@@ -955,7 +955,12 @@ class SettingsWindow:
         if dialog.result:
             category, extensions = dialog.result
             self.config["file_types"][category] = extensions
+            # Also update the app instance file types
+            if self.app_instance and self.app_instance.current_language in self.app_instance.file_type_categories:
+                self.app_instance.file_type_categories[self.app_instance.current_language][category] = extensions
             self.load_file_types()
+            # Save the configuration
+            self.save_callback()
     
     def edit_file_type(self):
         """Edit file type"""
