@@ -978,8 +978,17 @@ class SettingsWindow:
                 new_category, new_extensions = dialog.result
                 if new_category != category:
                     del self.config["file_types"][category]
+                    # Also update the app instance file types
+                    if self.app_instance and self.app_instance.current_language in self.app_instance.file_type_categories:
+                        if category in self.app_instance.file_type_categories[self.app_instance.current_language]:
+                            del self.app_instance.file_type_categories[self.app_instance.current_language][category]
                 self.config["file_types"][new_category] = new_extensions
+                # Also update the app instance file types
+                if self.app_instance and self.app_instance.current_language in self.app_instance.file_type_categories:
+                    self.app_instance.file_type_categories[self.app_instance.current_language][new_category] = new_extensions
                 self.load_file_types()
+                # Save the configuration
+                self.save_callback()
     
     def delete_file_type(self):
         """Delete file type"""
