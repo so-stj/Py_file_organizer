@@ -533,10 +533,13 @@ class FileOrganizer:
         
         # Update file types based on current language after loading config
         if self.current_language in self.file_type_categories:
-            # Only update if file_types is empty (first run)
-            if not self.config.get("file_types"):
+            # Check if this is a reset (empty file_types and language_selected is False)
+            if not self.config.get("file_types") and not self.config.get("language_selected", True):
+                print("初期化後の起動: デフォルトカテゴリーを設定")
                 self.config["file_types"] = self.file_type_categories[self.current_language].copy()
+            elif not self.config.get("file_types"):
                 print("初回起動: デフォルトカテゴリーを設定")
+                self.config["file_types"] = self.file_type_categories[self.current_language].copy()
             else:
                 # Preserve existing categories and merge with defaults
                 existing_file_types = self.config.get("file_types", {})
@@ -1127,6 +1130,24 @@ class SettingsWindow:
             if self.app_instance:
                 self.app_instance.config = reset_config.copy()
                 self.app_instance.current_language = "ja"
+                
+                # Reset app instance file type categories to default
+                if "ja" in self.app_instance.file_type_categories:
+                    # Get the original default categories
+                    default_categories = {
+                        "画像": [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".webp"],
+                        "動画": [".mp4", ".avi", ".mov", ".wmv", ".flv", ".mkv", ".webm"],
+                        "音声": [".mp3", ".wav", ".flac", ".aac", ".ogg", ".wma"],
+                        "文書": [".pdf", ".doc", ".docx", ".txt", ".rtf", ".odt"],
+                        "スプレッドシート": [".xls", ".xlsx", ".csv", ".ods"],
+                        "プレゼンテーション": [".ppt", ".pptx", ".odp"],
+                        "アーカイブ": [".zip", ".rar", ".7z", ".tar", ".gz"],
+                        "実行ファイル": [".exe", ".msi", ".dmg", ".deb", ".rpm"],
+                        "コード": [".py", ".js", ".html", ".css", ".java", ".cpp", ".c", ".php"]
+                    }
+                    self.app_instance.file_type_categories["ja"] = default_categories.copy()
+                    print("アプリケーションインスタンスのファイルタイプカテゴリーをリセットしました")
+                
                 print("アプリケーションインスタンスの設定を更新しました")
             
             print(f"初期化後の設定: {self.config}")
@@ -1139,15 +1160,25 @@ class SettingsWindow:
                     os.makedirs(config_dir, exist_ok=True)
                     print(f"ディレクトリを作成しました: {config_dir}")
                 
+                # Ensure file_types is empty
+                reset_config["file_types"] = {}
+                reset_config["language_selected"] = False
+                
                 # Save configuration
                 with open(config_file_path, 'w', encoding='utf-8') as f:
                     json.dump(reset_config, f, ensure_ascii=False, indent=2)
                 
                 print(f"設定ファイルを直接保存しました: {config_file_path}")
+                print(f"保存された設定: file_types={reset_config['file_types']}, language_selected={reset_config['language_selected']}")
                 
-                # Verify file was created
+                # Verify file was created and content is correct
                 if os.path.exists(config_file_path):
-                    print("✓ 設定ファイルが正常に作成されました")
+                    with open(config_file_path, 'r', encoding='utf-8') as f:
+                        saved_config = json.load(f)
+                    if not saved_config.get('file_types') and not saved_config.get('language_selected', True):
+                        print("✓ 設定ファイルが正常に作成され、初期化が完了しました")
+                    else:
+                        print("✗ 設定ファイルの内容が正しくありません")
                 else:
                     print("✗ 設定ファイルが作成されませんでした")
                     
