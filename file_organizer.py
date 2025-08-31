@@ -339,6 +339,79 @@ class FileOrganizer:
             self.save_config()
             messagebox.showinfo("Info", self.get_text("restart_required"))
     
+    def show_language_selection(self):
+        """Show language selection dialog on first run"""
+        # Create language selection dialog
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Language Selection / 言語選択")
+        dialog.geometry("400x300")
+        dialog.transient(self.root)
+        dialog.grab_set()
+        dialog.resizable(False, False)
+        
+        # Center the dialog
+        dialog.update_idletasks()
+        x = (dialog.winfo_screenwidth() // 2) - (400 // 2)
+        y = (dialog.winfo_screenheight() // 2) - (300 // 2)
+        dialog.geometry(f"400x300+{x}+{y}")
+        
+        # Main frame
+        main_frame = ttk.Frame(dialog, padding="20")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Title
+        title_label = ttk.Label(main_frame, text="Select your preferred language\nお好みの言語を選択してください", 
+                               justify=tk.CENTER)
+        title_label.pack(pady=(0, 20))
+        
+        # Language selection
+        self.language_var = tk.StringVar(value=self.current_language)
+        
+        # Japanese option
+        ja_frame = ttk.Frame(main_frame)
+        ja_frame.pack(fill=tk.X, pady=5)
+        ttk.Radiobutton(ja_frame, text="日本語", variable=self.language_var, 
+                       value="ja").pack(side=tk.LEFT)
+        ttk.Label(ja_frame, text="Japanese").pack(side=tk.LEFT, padx=(10, 0))
+        
+        # English option
+        en_frame = ttk.Frame(main_frame)
+        en_frame.pack(fill=tk.X, pady=5)
+        ttk.Radiobutton(en_frame, text="English", variable=self.language_var, 
+                       value="en").pack(side=tk.LEFT)
+        ttk.Label(en_frame, text="英語").pack(side=tk.LEFT, padx=(10, 0))
+        
+        # Swedish option
+        sv_frame = ttk.Frame(main_frame)
+        sv_frame.pack(fill=tk.X, pady=5)
+        ttk.Radiobutton(sv_frame, text="Svenska", variable=self.language_var, 
+                       value="sv").pack(side=tk.LEFT)
+        ttk.Label(sv_frame, text="スウェーデン語").pack(side=tk.LEFT, padx=(10, 0))
+        
+        # Description
+        desc_label = ttk.Label(main_frame, text="You can change the language later in Settings.\n後で設定から言語を変更できます。", 
+                              justify=tk.CENTER)
+        desc_label.pack(pady=(20, 0))
+        
+        # Buttons
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(fill=tk.X, pady=(20, 0))
+        
+        def confirm_language():
+            selected_language = self.language_var.get()
+            self.current_language = selected_language
+            self.config["language"] = selected_language
+            self.config["language_selected"] = True
+            self.save_config()
+            dialog.destroy()
+            # Update window title
+            self.root.title(self.get_text("app_title"))
+        
+        ttk.Button(btn_frame, text="OK / 決定", command=confirm_language).pack(side=tk.RIGHT)
+        
+        # Make dialog modal
+        dialog.wait_window()
+    
 
     
     def update_file_types_for_language(self):
@@ -1053,78 +1126,7 @@ class SettingsWindow:
                 messagebox.showinfo("Info", self.get_text("restart_required"))
         self.window.destroy()
     
-    def show_language_selection(self):
-        """Show language selection dialog on first run"""
-        # Create language selection dialog
-        dialog = tk.Toplevel(self.root)
-        dialog.title("Language Selection / 言語選択")
-        dialog.geometry("400x300")
-        dialog.transient(self.root)
-        dialog.grab_set()
-        dialog.resizable(False, False)
-        
-        # Center the dialog
-        dialog.update_idletasks()
-        x = (dialog.winfo_screenwidth() // 2) - (400 // 2)
-        y = (dialog.winfo_screenheight() // 2) - (300 // 2)
-        dialog.geometry(f"400x300+{x}+{y}")
-        
-        # Main frame
-        main_frame = ttk.Frame(dialog, padding="20")
-        main_frame.pack(fill=tk.BOTH, expand=True)
-        
-        # Title
-        title_label = ttk.Label(main_frame, text="Select your preferred language\nお好みの言語を選択してください", 
-                               justify=tk.CENTER)
-        title_label.pack(pady=(0, 20))
-        
-        # Language selection
-        self.language_var = tk.StringVar(value=self.current_language)
-        
-        # Japanese option
-        ja_frame = ttk.Frame(main_frame)
-        ja_frame.pack(fill=tk.X, pady=5)
-        ttk.Radiobutton(ja_frame, text="日本語", variable=self.language_var, 
-                       value="ja").pack(side=tk.LEFT)
-        ttk.Label(ja_frame, text="Japanese").pack(side=tk.LEFT, padx=(10, 0))
-        
-        # English option
-        en_frame = ttk.Frame(main_frame)
-        en_frame.pack(fill=tk.X, pady=5)
-        ttk.Radiobutton(en_frame, text="English", variable=self.language_var, 
-                       value="en").pack(side=tk.LEFT)
-        ttk.Label(en_frame, text="英語").pack(side=tk.LEFT, padx=(10, 0))
-        
-        # Swedish option
-        sv_frame = ttk.Frame(main_frame)
-        sv_frame.pack(fill=tk.X, pady=5)
-        ttk.Radiobutton(sv_frame, text="Svenska", variable=self.language_var, 
-                       value="sv").pack(side=tk.LEFT)
-        ttk.Label(sv_frame, text="スウェーデン語").pack(side=tk.LEFT, padx=(10, 0))
-        
-        # Description
-        desc_label = ttk.Label(main_frame, text="You can change the language later in Settings.\n後で設定から言語を変更できます。", 
-                              justify=tk.CENTER)
-        desc_label.pack(pady=(20, 0))
-        
-        # Buttons
-        btn_frame = ttk.Frame(main_frame)
-        btn_frame.pack(fill=tk.X, pady=(20, 0))
-        
-        def confirm_language():
-            selected_language = self.language_var.get()
-            self.current_language = selected_language
-            self.config["language"] = selected_language
-            self.config["language_selected"] = True
-            self.save_config()
-            dialog.destroy()
-            # Update window title
-            self.root.title(self.get_text("app_title"))
-        
-        ttk.Button(btn_frame, text="OK / 決定", command=confirm_language).pack(side=tk.RIGHT)
-        
-        # Make dialog modal
-        dialog.wait_window()
+
 
 
 class FileTypeDialog:
