@@ -110,6 +110,9 @@ class FileOrganizer:
             }
         }
         
+        # Track deleted default categories to prevent them from being restored
+        self.deleted_default_categories = set()
+        
         self.languages = {
             "ja": {
                 "app_title": "ファイル自動整理アプリ",
@@ -509,8 +512,17 @@ class FileOrganizer:
                 
                 print(f"Preserving custom categories: {list(custom_categories.keys())}")
                 
-                # Merge default and custom
-                self.config["file_types"] = default_file_types.copy()
+                # Filter out deleted default categories
+                deleted_defaults = set(self.config.get("deleted_default_categories", []))
+                available_defaults = {}
+                for category, extensions in default_file_types.items():
+                    if category not in deleted_defaults:
+                        available_defaults[category] = extensions
+                
+                print(f"Available default categories: {list(available_defaults.keys())}")
+                
+                # Merge available defaults and custom
+                self.config["file_types"] = available_defaults.copy()
                 self.config["file_types"].update(custom_categories)
             else:
                 # First time, just use default
@@ -526,6 +538,8 @@ class FileOrganizer:
         """Set only the default categories for a specific language (for reset scenarios)"""
         if language in self.file_type_categories:
             print(f"Setting default categories for language '{language}' only")
+            # Reset deleted default categories when doing a full reset
+            self.config["deleted_default_categories"] = []
             self.config["file_types"] = self.file_type_categories[language].copy()
             print(f"Categories set: {list(self.config['file_types'].keys())}")
             self.save_config()
@@ -539,7 +553,8 @@ class FileOrganizer:
             "create_date_folders": True,
             "move_duplicates": True,
             "language": "ja",
-            "language_selected": False
+            "language_selected": False,
+            "deleted_default_categories": []
         }
         
         if os.path.exists(self.config_file):
@@ -562,7 +577,8 @@ class FileOrganizer:
                     "create_date_folders": True,
                     "move_duplicates": True,
                     "language": "ja",
-                    "language_selected": False
+                    "language_selected": False,
+                    "deleted_default_categories": []
                 }
         
         # Set current language from config (but don't set file types if reset)
@@ -579,12 +595,16 @@ class FileOrganizer:
                 print("First run: setting default categories")
                 self.config["file_types"] = self.file_type_categories[self.current_language].copy()
             else:
-                # Normal operation: preserve existing categories and merge with defaults
+                # Normal operation: preserve existing categories and merge with non-deleted defaults
                 existing_file_types = self.config.get("file_types", {})
                 default_file_types = self.file_type_categories[self.current_language].copy()
                 
+                # Load deleted default categories from config
+                deleted_defaults = set(self.config.get("deleted_default_categories", []))
+                
                 print(f"Existing categories: {list(existing_file_types.keys())}")
                 print(f"Default categories: {list(default_file_types.keys())}")
+                print(f"Deleted default categories: {list(deleted_defaults)}")
                 
                 # Find custom categories (not in default)
                 custom_categories = {}
@@ -594,8 +614,16 @@ class FileOrganizer:
                 
                 print(f"Custom categories: {list(custom_categories.keys())}")
                 
-                # Merge default and custom
-                merged_file_types = default_file_types.copy()
+                # Filter out deleted default categories
+                available_defaults = {}
+                for category, extensions in default_file_types.items():
+                    if category not in deleted_defaults:
+                        available_defaults[category] = extensions
+                
+                print(f"Available default categories: {list(available_defaults.keys())}")
+                
+                # Merge available defaults and custom
+                merged_file_types = available_defaults.copy()
                 merged_file_types.update(custom_categories)
                 self.config["file_types"] = merged_file_types
                 
@@ -1167,7 +1195,8 @@ class SettingsWindow:
                 "create_date_folders": True,
                 "move_duplicates": True,
                 "language": "ja",
-                "language_selected": False
+                "language_selected": False,
+                "deleted_default_categories": []
             }
             
             # Update both settings window config and app instance config
@@ -1352,6 +1381,17 @@ class SettingsWindow:
         category = item["text"]
         if category in self.config["file_types"]:
             if messagebox.askyesno("Confirm", f"{self.get_text('confirm_delete_category')} '{category}' {self.get_text('confirm_delete_question')}"):
+                # Check if this is a default category
+                is_default_category = False
+                if self.app_instance and self.app_instance.current_language in self.app_instance.file_type_categories:
+                    if category in self.app_instance.file_type_categories[self.app_instance.current_language]:
+                        is_default_category = True
+                        # Add to deleted default categories list
+                        if "deleted_default_categories" not in self.config:
+                            self.config["deleted_default_categories"] = []
+                        if category not in self.config["deleted_default_categories"]:
+                            self.config["deleted_default_categories"].append(category)
+                
                 del self.config["file_types"][category]
                 # Also update the app instance file types
                 if self.app_instance and self.app_instance.current_language in self.app_instance.file_type_categories:
