@@ -494,43 +494,153 @@ class FileOrganizer:
     def update_file_types_for_language(self):
         """Update file types based on current language"""
         if self.current_language in self.file_type_categories:
-            print(f"Updating file types for language '{self.current_language}'...")
+            print(f"=== update_file_types_for_language called ===")
+            print(f"Current language: '{self.current_language}'")
+            print(f"Current config state:")
+            print(f"  - file_types count: {len(self.config.get('file_types', {}))}")
+            print(f"  - file_types keys: {list(self.config.get('file_types', {}).keys())}")
+            print(f"  - deleted_default_categories count: {len(self.config.get('deleted_default_categories', []))}")
+            print(f"  - deleted_default_categories: {self.config.get('deleted_default_categories', [])}")
+            print(f"  - language: {self.config.get('language', 'unknown')}")
+            print(f"  - previous_language: {self.config.get('previous_language', 'unknown')}")
             
             # Get default file types for current language
             default_file_types = self.file_type_categories[self.current_language].copy()
-            print(f"Default categories: {list(default_file_types.keys())}")
+            print(f"Default categories for '{self.current_language}': {list(default_file_types.keys())}")
             
             # Check if this is a reset scenario (language_selected is False)
             if not self.config.get("language_selected", True):
                 print("Reset detected: using default categories only")
                 self.config["file_types"] = default_file_types
             elif self.config.get("file_types"):
+                print(f"Processing existing file types...")
+                print(f"Current file_types before processing: {list(self.config['file_types'].keys())}")
+                
                 # Normal operation: preserve custom categories
                 custom_categories = {}
                 for category, extensions in self.config["file_types"].items():
-                    if category not in default_file_types:
+                    print(f"  Checking category: '{category}' with extensions: {extensions}")
+                    
+                    # Check if this category exists in the current language's defaults
+                    is_in_current_language_defaults = category in default_file_types
+                    
+                    # Check if this category exists in any default language
+                    is_default_in_any_language = False
+                    for lang in self.file_type_categories:
+                        if category in self.file_type_categories[lang]:
+                            is_default_in_any_language = True
+                            print(f"    Found in default language '{lang}': {category}")
+                            break
+                    
+                    # A category is considered custom if:
+                    # 1. It's not in the current language's defaults, OR
+                    # 2. It's not in any default language
+                    if not is_in_current_language_defaults or not is_default_in_any_language:
                         custom_categories[category] = extensions
+                        print(f"    ✓ CUSTOM: '{category}' with extensions: {extensions}")
+                        if is_in_current_language_defaults:
+                            print(f"      Note: This category exists in current language defaults but is preserved as custom")
+                    else:
+                        print(f"    ✗ DEFAULT: '{category}'")
                 
-                print(f"Preserving custom categories: {list(custom_categories.keys())}")
+                print(f"Final custom categories to preserve: {list(custom_categories.keys())}")
+                
+                # IMPORTANT: Clear out ALL existing categories first
+                print(f"Clearing all existing categories before rebuilding...")
+                print(f"Categories before clearing: {list(self.config['file_types'].keys())}")
+                self.config["file_types"] = {}
+                print(f"Categories after clearing: {list(self.config['file_types'].keys())}")
                 
                 # Filter out deleted default categories
-                deleted_defaults = set(self.config.get("deleted_default_categories", []))
+                deleted_defaults = self.config.get("deleted_default_categories", [])
+                
+                # Find categories that should be deleted in current language
+                current_language_deleted = set()
+                
+                for deletion_info in deleted_defaults:
+                    if isinstance(deletion_info, dict):
+                        # New format: {category, language, extensions}
+                        deleted_category = deletion_info.get("category")
+                        deleted_language = deletion_info.get("language")
+                        deleted_extensions = deletion_info.get("extensions")
+                        
+                        # Check if this deletion applies to current language
+                        # If extensions match any category in current language, mark it as deleted
+                        for current_category in default_file_types:
+                            if default_file_types[current_category] == deleted_extensions:
+                                current_language_deleted.add(current_category)
+                                print(f"Marking '{current_category}' as deleted (equivalent to '{deleted_category}' from '{deleted_language}')")
+                                break
+                    elif isinstance(deletion_info, str):
+                        # Old format: just category name
+                        # Try to find equivalent category in current language by comparing extensions
+                        if deletion_info in self.file_type_categories.get(self.current_language, {}):
+                            # This is a direct match in current language
+                            current_language_deleted.add(deletion_info)
+                        else:
+                            # Try to find by extension matching
+                            deleted_extensions = self.file_type_categories.get(self.current_language, {}).get(deletion_info, [])
+                            for current_category in default_file_types:
+                                if default_file_types[current_category] == deleted_extensions:
+                                    current_language_deleted.add(current_category)
+                                    print(f"Marking '{current_category}' as deleted (equivalent to old format '{deletion_info}')")
+                                    break
+                
                 available_defaults = {}
                 for category, extensions in default_file_types.items():
-                    if category not in deleted_defaults:
+                    if category not in current_language_deleted:
                         available_defaults[category] = extensions
                 
                 print(f"Available default categories: {list(available_defaults.keys())}")
+                print(f"Deleted categories in current language: {list(current_language_deleted)}")
                 
-                # Merge available defaults and custom
-                self.config["file_types"] = available_defaults.copy()
-                self.config["file_types"].update(custom_categories)
+                print(f"=== Final merge process ===")
+                print(f"Available default categories: {list(available_defaults.keys())}")
+                print(f"Custom categories to merge: {list(custom_categories.keys())}")
+                
+                # IMPORTANT: Clear out any categories from the previous language
+                # Only keep categories that are either:
+                # 1. In the current language's defaults (and not deleted), OR
+                # 2. Custom categories
+                self.config["file_types"] = {}
+                
+                # Add available defaults from current language
+                for category, extensions in available_defaults.items():
+                    self.config["file_types"][category] = extensions
+                
+                # Add custom categories
+                for category, extensions in custom_categories.items():
+                    self.config["file_types"][category] = extensions
+                
+                print(f"Final result after language update:")
+                print(f"  - Current language defaults: {list(available_defaults.keys())}")
+                print(f"  - Custom categories: {list(custom_categories.keys())}")
+                print(f"  - Total categories: {list(self.config['file_types'].keys())}")
+                
+                # IMPORTANT: Final verification - ensure no categories from previous language remain
+                print(f"=== Final verification ===")
+                final_categories = list(self.config['file_types'].keys())
+                expected_categories = list(available_defaults.keys()) + list(custom_categories.keys())
+                
+                # Check for any unexpected categories
+                unexpected_categories = [cat for cat in final_categories if cat not in expected_categories]
+                if unexpected_categories:
+                    print(f"WARNING: Found unexpected categories: {unexpected_categories}")
+                    print(f"Removing unexpected categories...")
+                    for cat in unexpected_categories:
+                        del self.config['file_types'][cat]
+                    print(f"Categories after cleanup: {list(self.config['file_types'].keys())}")
+                else:
+                    print(f"✓ All categories are expected - no cleanup needed")
+                
             else:
                 # First time, just use default
                 self.config["file_types"] = default_file_types
                 print("First run: setting default categories only")
             
+            print(f"=== Final result ===")
             print(f"Updated categories: {list(self.config['file_types'].keys())}")
+            print(f"Total categories count: {len(self.config['file_types'])}")
             
             # Save configuration
             self.save_config()
@@ -601,34 +711,70 @@ class FileOrganizer:
                 default_file_types = self.file_type_categories[self.current_language].copy()
                 
                 # Load deleted default categories from config
-                deleted_defaults = set(self.config.get("deleted_default_categories", []))
+                deleted_defaults = self.config.get("deleted_default_categories", [])
+                
+                # Extract category names from deletion info
+                deleted_category_names = set()
+                for deletion_info in deleted_defaults:
+                    if isinstance(deletion_info, dict):
+                        deleted_category_names.add(deletion_info.get("category"))
+                    elif isinstance(deletion_info, str):
+                        deleted_category_names.add(deletion_info)
                 
                 print(f"Existing categories: {list(existing_file_types.keys())}")
                 print(f"Default categories: {list(default_file_types.keys())}")
-                print(f"Deleted default categories: {list(deleted_defaults)}")
+                print(f"Deleted default categories: {list(deleted_category_names)}")
                 
-                # Find custom categories (not in default)
+                # Find custom categories (not in any default language)
                 custom_categories = {}
                 for category, extensions in existing_file_types.items():
-                    if category not in default_file_types:
+                    print(f"  Checking category during config load: '{category}' with extensions: {extensions}")
+                    
+                    # Check if this category exists in the current language's defaults
+                    is_in_current_language_defaults = category in default_file_types
+                    
+                    # Check if this is a custom category (not in any default language)
+                    is_default_in_any_language = False
+                    for lang in self.file_type_categories:
+                        if category in self.file_type_categories[lang]:
+                            is_default_in_any_language = True
+                            print(f"    Found in default language '{lang}': {category}")
+                            break
+                    
+                    # A category is considered custom if:
+                    # 1. It's not in the current language's defaults, OR
+                    # 2. It's not in any default language
+                    if not is_in_current_language_defaults or not is_default_in_any_language:
                         custom_categories[category] = extensions
+                        print(f"    ✓ CUSTOM: '{category}' with extensions: {extensions}")
+                        if is_in_current_language_defaults:
+                            print(f"      Note: This category exists in current language defaults but is preserved as custom")
+                    else:
+                        print(f"    ✗ DEFAULT: '{category}'")
                 
-                print(f"Custom categories: {list(custom_categories.keys())}")
+                print(f"Final custom categories during config load: {list(custom_categories.keys())}")
+                
+                # IMPORTANT: Clear out ALL existing categories first to prevent previous language categories from remaining
+                print(f"Clearing all existing categories before rebuilding...")
+                self.config["file_types"] = {}
                 
                 # Filter out deleted default categories
                 available_defaults = {}
                 for category, extensions in default_file_types.items():
-                    if category not in deleted_defaults:
+                    if category not in deleted_category_names:
                         available_defaults[category] = extensions
                 
                 print(f"Available default categories: {list(available_defaults.keys())}")
                 
-                # Merge available defaults and custom
-                merged_file_types = available_defaults.copy()
-                merged_file_types.update(custom_categories)
-                self.config["file_types"] = merged_file_types
+                # IMPORTANT: Rebuild file_types with only available defaults and custom categories
+                # This ensures no categories from previous languages remain
+                for category, extensions in available_defaults.items():
+                    self.config["file_types"][category] = extensions
                 
-                print(f"Merged categories: {list(self.config['file_types'].keys())}")
+                for category, extensions in custom_categories.items():
+                    self.config["file_types"][category] = extensions
+                
+                print(f"Rebuilt categories: {list(self.config['file_types'].keys())}")
         
         # Mark config as loaded
         self.config_loaded = True
@@ -636,8 +782,13 @@ class FileOrganizer:
     def save_config(self):
         """Save configuration file"""
         try:
-            print(f"Saving config file: {self.config_file}")
-            print(f"Settings to save: {self.config}")
+            print(f"=== save_config called ===")
+            print(f"Config file path: {self.config_file}")
+            print(f"Current config state:")
+            print(f"  - file_types count: {len(self.config.get('file_types', {}))}")
+            print(f"  - file_types keys: {list(self.config.get('file_types', {}).keys())}")
+            print(f"  - language: {self.config.get('language', 'unknown')}")
+            print(f"  - language_selected: {self.config.get('language_selected', False)}")
             
             # Ensure directory exists (especially important for Windows)
             config_dir = os.path.dirname(self.config_file)
@@ -654,6 +805,16 @@ class FileOrganizer:
             # Verify file was created
             if os.path.exists(self.config_file):
                 print(f"✓ File created successfully: {self.config_file}")
+                
+                # IMPORTANT: Verify the saved content
+                try:
+                    with open(self.config_file, 'r', encoding='utf-8') as f:
+                        saved_content = json.load(f)
+                    print(f"✓ File content verified:")
+                    print(f"  - Saved file_types count: {len(saved_content.get('file_types', {}))}")
+                    print(f"  - Saved file_types keys: {list(saved_content.get('file_types', {}).keys())}")
+                except Exception as verify_error:
+                    print(f"✗ Error verifying saved content: {verify_error}")
             else:
                 print(f"✗ File was not created: {self.config_file}")
                 
@@ -1329,19 +1490,65 @@ class SettingsWindow:
         dialog = FileTypeDialog(self.window, self.get_text("new_file_type"), app_instance=self.app_instance)
         if dialog.result:
             category, extensions = dialog.result
-            print(f"Adding category: {category} - {extensions}")
+            print(f"=== Adding custom category ===")
+            print(f"Category: {category}")
+            print(f"Extensions: {extensions}")
+            print(f"Current language: {self.app_instance.current_language if self.app_instance else 'unknown'}")
+            
+            # Check if this category exists in any default language
+            is_default_in_any_language = False
+            if self.app_instance:
+                for lang in self.app_instance.file_type_categories:
+                    if category in self.app_instance.file_type_categories[lang]:
+                        is_default_in_any_language = True
+                        print(f"  WARNING: '{category}' already exists in default language '{lang}'")
+                        break
+                
+                if not is_default_in_any_language:
+                    print(f"  ✓ Confirmed as custom category")
+                else:
+                    print(f"  ✗ This is a default category, not custom")
             
             # Update config file types
             self.config["file_types"][category] = extensions
+            print(f"  Added to config['file_types']: {list(self.config['file_types'].keys())}")
             
-            # Also update the app instance file types
-            if self.app_instance and self.app_instance.current_language in self.app_instance.file_type_categories:
-                self.app_instance.file_type_categories[self.app_instance.current_language][category] = extensions
+            # IMPORTANT: Also update the app instance config to keep them in sync
+            if self.app_instance:
+                self.app_instance.config["file_types"][category] = extensions
+                print(f"  Updated app instance config['file_types']")
             
             self.load_file_types()
             # Save the configuration
+            print(f"  About to call save_callback...")
             self.save_callback()
-            print(f"Categories count after addition: {len(self.config['file_types'])}")
+            print(f"  save_callback completed")
+            
+            # IMPORTANT: Verify that the category was actually saved
+            if category in self.config["file_types"]:
+                print(f"  ✓ Category '{category}' successfully saved in config")
+            else:
+                print(f"  ✗ ERROR: Category '{category}' was NOT saved in config!")
+            
+            # IMPORTANT: Verify that the app instance also has the category
+            if self.app_instance and category in self.app_instance.config["file_types"]:
+                print(f"  ✓ Category '{category}' successfully saved in app instance")
+            else:
+                print(f"  ✗ ERROR: Category '{category}' was NOT saved in app instance!")
+            
+            # IMPORTANT: Verify that the category is visible in the UI
+            visible_categories = []
+            for item in self.tree.get_children():
+                visible_categories.append(self.tree.item(item)["text"])
+            
+            if category in visible_categories:
+                print(f"  ✓ Category '{category}' is visible in the UI")
+            else:
+                print(f"  ✗ ERROR: Category '{category}' is NOT visible in the UI!")
+                print(f"  Visible categories: {visible_categories}")
+            
+            print(f"  Final categories count: {len(self.config['file_types'])}")
+            print(f"  Final categories: {list(self.config['file_types'].keys())}")
     
     def edit_file_type(self):
         """Edit file type"""
@@ -1364,12 +1571,18 @@ class SettingsWindow:
                         if category in self.app_instance.file_type_categories[self.app_instance.current_language]:
                             del self.app_instance.file_type_categories[self.app_instance.current_language][category]
                 self.config["file_types"][new_category] = new_extensions
-                # Also update the app instance file types
-                if self.app_instance and self.app_instance.current_language in self.app_instance.file_type_categories:
-                    self.app_instance.file_type_categories[self.app_instance.current_language][new_category] = new_extensions
+                # IMPORTANT: Also update the app instance config to keep them in sync
+                if self.app_instance:
+                    self.app_instance.config["file_types"][new_category] = new_extensions
                 self.load_file_types()
                 # Save the configuration
                 self.save_callback()
+                
+                # IMPORTANT: Verify that the category was actually saved
+                if new_category in self.config["file_types"]:
+                    print(f"  ✓ Category '{new_category}' successfully saved in config")
+                else:
+                    print(f"  ✗ ERROR: Category '{new_category}' was NOT saved in config!")
     
     def delete_file_type(self):
         """Delete file type"""
@@ -1387,20 +1600,75 @@ class SettingsWindow:
                 if self.app_instance and self.app_instance.current_language in self.app_instance.file_type_categories:
                     if category in self.app_instance.file_type_categories[self.app_instance.current_language]:
                         is_default_category = True
-                        # Add to deleted default categories list
-                        if "deleted_default_categories" not in self.config:
-                            self.config["deleted_default_categories"] = []
-                        if category not in self.config["deleted_default_categories"]:
-                            self.config["deleted_default_categories"].append(category)
+                        # Get the extensions of the deleted category
+                        deleted_extensions = self.app_instance.file_type_categories[self.app_instance.current_language][category]
+                        
+                        # Find equivalent categories in other languages and mark them as deleted
+                        for lang in self.app_instance.file_type_categories:
+                            for other_category, other_extensions in self.app_instance.file_type_categories[lang].items():
+                                if other_extensions == deleted_extensions:
+                                    # This category in another language has the same extensions
+                                    # Mark it as deleted for that language too
+                                    deletion_info = {
+                                        "category": other_category,
+                                        "language": lang,
+                                        "extensions": other_extensions
+                                    }
+                                    
+                                    # Check if this category was already deleted
+                                    already_deleted = False
+                                    for existing_deletion in self.config["deleted_default_categories"]:
+                                        if (isinstance(existing_deletion, dict) and 
+                                            existing_deletion.get("category") == other_category and
+                                            existing_deletion.get("language") == lang):
+                                            already_deleted = True
+                                            break
+                                        elif isinstance(existing_deletion, str) and existing_deletion == other_category:
+                                            # Convert old string format to new dict format
+                                            self.config["deleted_default_categories"].remove(existing_deletion)
+                                            break
+                                    
+                                    if not already_deleted:
+                                        self.config["deleted_default_categories"].append(deletion_info)
+                                        print(f"Marking '{other_category}' from '{lang}' as deleted (equivalent to '{category}' from '{self.app_instance.current_language}')")
+                        
+                        # Also add the current language deletion
+                        current_deletion_info = {
+                            "category": category,
+                            "language": self.app_instance.current_language,
+                            "extensions": deleted_extensions
+                        }
+                        
+                        # Check if this category was already deleted
+                        already_deleted = False
+                        for existing_deletion in self.config["deleted_default_categories"]:
+                            if (isinstance(existing_deletion, dict) and 
+                                existing_deletion.get("category") == category and
+                                existing_deletion.get("language") == self.app_instance.current_language):
+                                already_deleted = True
+                                break
+                            elif isinstance(existing_deletion, str) and existing_deletion == category:
+                                # Convert old string format to new dict format
+                                self.config["deleted_default_categories"].remove(existing_deletion)
+                                break
+                        
+                        if not already_deleted:
+                            self.config["deleted_default_categories"].append(current_deletion_info)
                 
                 del self.config["file_types"][category]
-                # Also update the app instance file types
-                if self.app_instance and self.app_instance.current_language in self.app_instance.file_type_categories:
-                    if category in self.app_instance.file_type_categories[self.app_instance.current_language]:
-                        del self.app_instance.file_type_categories[self.app_instance.current_language][category]
+                # IMPORTANT: Also update the app instance config to keep them in sync
+                if self.app_instance:
+                    if category in self.app_instance.config["file_types"]:
+                        del self.app_instance.config["file_types"][category]
                 self.load_file_types()
                 # Save the configuration
                 self.save_callback()
+                
+                # IMPORTANT: Verify that the category was actually deleted
+                if category not in self.config["file_types"]:
+                    print(f"  ✓ Category '{category}' successfully deleted from config")
+                else:
+                    print(f"  ✗ ERROR: Category '{category}' was NOT deleted from config!")
     
     def save_settings(self):
         """Save settings"""
@@ -1429,12 +1697,39 @@ class SettingsWindow:
                 current_file_types = self.config.get("file_types", {})
                 custom_categories = {}
                 
-                # Find custom categories (not in default for current language)
-                if self.app_instance and self.app_instance.current_language in self.app_instance.file_type_categories:
-                    default_categories = self.app_instance.file_type_categories[self.app_instance.current_language]
-                    for category, extensions in current_file_types.items():
-                        if category not in default_categories:
-                            custom_categories[category] = extensions
+                # Find custom categories (not in any default language)
+                for category, extensions in current_file_types.items():
+                    print(f"  Checking category during language change: '{category}' with extensions: {extensions}")
+                    
+                    # Check if this category exists in the new language's defaults
+                    is_in_new_language_defaults = False
+                    if self.app_instance and new_language in self.app_instance.file_type_categories:
+                        is_in_new_language_defaults = category in self.app_instance.file_type_categories[new_language]
+                    
+                    # Check if this is a custom category (not in any default language)
+                    is_default_in_any_language = False
+                    if self.app_instance:
+                        for lang in self.app_instance.file_type_categories:
+                            if category in self.app_instance.file_type_categories[lang]:
+                                is_default_in_any_language = True
+                                print(f"    Found in default language '{lang}': {category}")
+                                break
+                    
+                    # IMPORTANT: A category is considered custom ONLY if it's not in ANY default language
+                    # This ensures that categories from previous languages are not preserved as "custom"
+                    if not is_default_in_any_language:
+                        custom_categories[category] = extensions
+                        print(f"    ✓ CUSTOM: '{category}' with extensions: {extensions}")
+                    else:
+                        print(f"    ✗ DEFAULT: '{category}' (will be replaced by new language defaults)")
+                
+                print(f"Final custom categories to preserve during language change: {list(custom_categories.keys())}")
+                
+                # IMPORTANT: Clear out ALL existing categories from previous language
+                print(f"Clearing all existing categories from previous language before setting new language...")
+                print(f"Categories before clearing: {list(self.config['file_types'].keys())}")
+                self.config["file_types"] = {}
+                print(f"Categories after clearing: {list(self.config['file_types'].keys())}")
                 
                 self.config["language"] = new_language
                 
@@ -1443,18 +1738,61 @@ class SettingsWindow:
                     new_default_types = self.app_instance.file_type_categories[new_language].copy()
                     
                     # Filter out deleted default categories for the new language
-                    deleted_defaults = set(self.config.get("deleted_default_categories", []))
+                    deleted_defaults = self.config.get("deleted_default_categories", [])
                     
                     # Check which deleted categories exist in the new language
                     new_language_defaults = self.app_instance.file_type_categories[new_language]
                     deleted_in_new_language = []
-                    for deleted_category in deleted_defaults:
-                        if deleted_category in new_language_defaults:
-                            deleted_in_new_language.append(deleted_category)
+                    
+                    for deletion_info in deleted_defaults:
+                        if isinstance(deletion_info, dict):
+                            deleted_category = deletion_info.get("category")
+                            deleted_extensions = deletion_info.get("extensions")
+                            
+                            # Check if this category exists in the new language
+                            if deleted_category in new_language_defaults:
+                                deleted_in_new_language.append(deleted_category)
+                            else:
+                                # Try to find by extension matching
+                                for new_category, new_extensions in new_language_defaults.items():
+                                    if new_extensions == deleted_extensions:
+                                        deleted_in_new_language.append(new_category)
+                                        break
+                        elif isinstance(deletion_info, str):
+                            # Handle old string format
+                            if deletion_info in new_language_defaults:
+                                deleted_in_new_language.append(deletion_info)
                     
                     # Update deleted_default_categories to only include categories that exist in the new language
-                    self.config["deleted_default_categories"] = deleted_in_new_language
+                    # Convert to new format for the new language
+                    new_deleted_categories = []
+                    for deletion_info in deleted_defaults:
+                        if isinstance(deletion_info, dict):
+                            deleted_extensions = deletion_info.get("extensions")
+                            # Find equivalent category in new language
+                            for new_category, new_extensions in new_language_defaults.items():
+                                if new_extensions == deleted_extensions:
+                                    new_deleted_categories.append({
+                                        "category": new_category,
+                                        "language": new_language,
+                                        "extensions": new_extensions
+                                    })
+                                    break
+                        elif isinstance(deletion_info, str):
+                            # Handle old string format
+                            if deletion_info in new_language_defaults:
+                                new_deleted_categories.append({
+                                    "category": deletion_info,
+                                    "language": new_language,
+                                    "extensions": new_language_defaults[deletion_info]
+                                })
                     
+                    self.config["deleted_default_categories"] = new_deleted_categories
+                    
+                    # IMPORTANT: Clear out any categories from the previous language
+                    # Only keep categories that are either:
+                    # 1. In the new language's defaults (and not deleted), OR
+                    # 2. Custom categories
                     available_defaults = {}
                     for category, extensions in new_default_types.items():
                         if category not in deleted_in_new_language:
@@ -1462,19 +1800,68 @@ class SettingsWindow:
                     
                     print(f"Available default categories for new language '{new_language}': {list(available_defaults.keys())}")
                     print(f"Deleted default categories in new language: {deleted_in_new_language}")
+                    print(f"Custom categories to preserve: {list(custom_categories.keys())}")
                     
-                    # Merge available defaults and custom categories
-                    merged_file_types = available_defaults.copy()
-                    merged_file_types.update(custom_categories)
-                    self.config["file_types"] = merged_file_types
+                    # Clear current file_types and rebuild with only new language defaults and custom categories
+                    self.config["file_types"] = {}
                     
-                    print(f"Final merged categories: {list(self.config['file_types'].keys())}")
+                    # Add available defaults from new language
+                    for category, extensions in available_defaults.items():
+                        self.config["file_types"][category] = extensions
+                    
+                    # Add custom categories
+                    for category, extensions in custom_categories.items():
+                        self.config["file_types"][category] = extensions
+                    
+                    print(f"Final result after language change:")
+                    print(f"  - New language defaults: {list(available_defaults.keys())}")
+                    print(f"  - Custom categories: {list(custom_categories.keys())}")
+                    print(f"  - Total categories: {list(self.config['file_types'].keys())}")
+                    
+                    # IMPORTANT: Final verification - ensure no categories from previous language remain
+                    print(f"=== Final verification in save_language_settings ===")
+                    final_categories = list(self.config['file_types'].keys())
+                    expected_categories = list(available_defaults.keys()) + list(custom_categories.keys())
+                    
+                    # Check for any unexpected categories
+                    unexpected_categories = [cat for cat in final_categories if cat not in expected_categories]
+                    if unexpected_categories:
+                        print(f"WARNING: Found unexpected categories: {unexpected_categories}")
+                        print(f"Removing unexpected categories...")
+                        for cat in unexpected_categories:
+                            del self.config['file_types'][cat]
+                        print(f"Categories after cleanup: {list(self.config['file_types'].keys())}")
+                    else:
+                        print(f"✓ All categories are expected - no cleanup needed")
+            
+            # Update the app instance language without calling update_file_types_for_language
+            if self.app_instance:
+                self.app_instance.current_language = new_language
+                self.app_instance.config["language"] = new_language
+                print(f"Updated app instance language to: {new_language}")
+                
+                # IMPORTANT: Directly update the app instance file_types to match our processed result
+                print(f"Directly updating app instance file_types to match processed result...")
+                self.app_instance.config["file_types"] = self.config["file_types"].copy()
+                print(f"App instance file_types updated: {list(self.app_instance.config['file_types'].keys())}")
+                
+                # IMPORTANT: Final verification - ensure app instance matches our result
+                print(f"=== Final verification - app instance synchronization ===")
+                app_categories = list(self.app_instance.config['file_types'].keys())
+                expected_categories = list(available_defaults.keys()) + list(custom_categories.keys())
+                
+                if app_categories != expected_categories:
+                    print(f"WARNING: App instance categories don't match expected!")
+                    print(f"  Expected: {expected_categories}")
+                    print(f"  App instance: {app_categories}")
+                    print(f"  Forcing synchronization...")
+                    self.app_instance.config["file_types"] = self.config["file_types"].copy()
+                    print(f"App instance synchronized: {list(self.app_instance.config['file_types'].keys())}")
+                else:
+                    print(f"✓ App instance synchronized successfully")
             
             self.save_callback()
-            if self.app_instance:
-                self.app_instance.change_language(new_language)
-            else:
-                messagebox.showinfo("Info", self.get_text("restart_required"))
+            messagebox.showinfo("Info", self.get_text("restart_required"))
         self.window.destroy()
     
 
@@ -1493,19 +1880,46 @@ class FileTypeDialog:
         # Get language settings from parent
         self.current_language = "ja"
         self.languages = {}
-        if hasattr(parent, 'master') and hasattr(parent.master, 'master'):
+        
+        print(f"FileTypeDialog: Parent type: {type(parent)}")
+        print(f"FileTypeDialog: Parent attributes: {[attr for attr in dir(parent) if not attr.startswith('_')]}")
+        
+        # Try to get language settings from parent
+        if hasattr(parent, 'current_language') and hasattr(parent, 'languages'):
+            # Parent is a settings window
+            self.current_language = parent.current_language
+            self.languages = parent.languages
+            print(f"FileTypeDialog: Got language settings from settings window - language: {self.current_language}")
+        elif hasattr(parent, 'get_text'):
+            # Parent has get_text method, try to get language from app_instance
+            if hasattr(parent, 'app_instance') and parent.app_instance:
+                self.current_language = parent.app_instance.current_language
+                self.languages = parent.app_instance.languages
+                print(f"FileTypeDialog: Got language settings from parent.app_instance - language: {self.current_language}")
+        elif hasattr(parent, 'master') and hasattr(parent.master, 'master'):
             # Try to get from main app
             main_app = parent.master.master
             if hasattr(main_app, 'current_language'):
                 self.current_language = main_app.current_language
                 self.languages = main_app.languages
+                print(f"FileTypeDialog: Got language settings from main app - language: {self.current_language}")
+        
+        # Also try to get language settings from app_instance parameter
+        if app_instance and not self.languages:
+            self.current_language = app_instance.current_language
+            self.languages = app_instance.languages
+            print(f"FileTypeDialog: Got language settings from app_instance parameter - language: {self.current_language}")
+        
+        print(f"FileTypeDialog: Final language settings - current_language: {self.current_language}, languages keys: {list(self.languages.keys()) if self.languages else 'None'}")
         
         self.setup_ui(category, extensions or [])
         self.window.wait_window()
     
     def get_text(self, key: str) -> str:
         """Get text in current language"""
-        return self.languages.get(self.current_language, {}).get(key, key)
+        result = self.languages.get(self.current_language, {}).get(key, key)
+        print(f"FileTypeDialog.get_text('{key}') -> '{result}' (language: {self.current_language})")
+        return result
     
     def setup_ui(self, category, extensions):
         """Build dialog UI"""
