@@ -1,9 +1,86 @@
 {
-  "file_types": {},
+  "file_types": {
+    "Bilder": [
+      ".jpg",
+      ".jpeg",
+      ".png",
+      ".gif",
+      ".bmp",
+      ".tiff",
+      ".webp"
+    ],
+    "Videor": [
+      ".mp4",
+      ".avi",
+      ".mov",
+      ".wmv",
+      ".flv",
+      ".mkv",
+      ".webm"
+    ],
+    "Ljud": [
+      ".mp3",
+      ".wav",
+      ".flac",
+      ".aac",
+      ".ogg",
+      ".wma"
+    ],
+    "Dokument": [
+      ".pdf",
+      ".doc",
+      ".docx",
+      ".txt",
+      ".rtf",
+      ".odt"
+    ],
+    "Kalkylblad": [
+      ".xls",
+      ".xlsx",
+      ".csv",
+      ".ods"
+    ],
+    "Presentationer": [
+      ".ppt",
+      ".pptx",
+      ".odp"
+    ],
+    "Arkiv": [
+      ".zip",
+      ".rar",
+      ".7z",
+      ".tar",
+      ".gz"
+    ],
+    "Körbara filer": [
+      ".exe",
+      ".msi",
+      ".dmg",
+      ".deb",
+      ".rpm"
+    ],
+    "Kod": [
+      ".py",
+      ".js",
+      ".html",
+      ".css",
+      ".java",
+      ".cpp",
+      ".c",
+      ".php"
+    ]
+  },
   "recent_directories": [],
   "auto_organize": true,
   "create_date_folders": true,
   "move_duplicates": true,
-  "language": "ja",
-  "language_selected": false
+  "language": "sv",
+  "language_selected": true,
+  "deleted_default_categories": [
+    "アーカイブ",
+    "実行ファイル",
+    "Code",
+    "Executables",
+    "Archives"
+  ]
 }
