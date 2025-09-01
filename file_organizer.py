@@ -397,6 +397,7 @@ class FileOrganizer:
                 self.set_language_categories_only(language)
             else:
                 # Normal language change: use update_file_types_for_language
+                print(f"Language change to '{language}': updating file types")
                 self.update_file_types_for_language()
             
             self.save_config()
@@ -1440,9 +1441,34 @@ class SettingsWindow:
                 # Update file types for new language, preserving custom categories
                 if self.app_instance and new_language in self.app_instance.file_type_categories:
                     new_default_types = self.app_instance.file_type_categories[new_language].copy()
-                    # Merge with custom categories
-                    new_default_types.update(custom_categories)
-                    self.config["file_types"] = new_default_types
+                    
+                    # Filter out deleted default categories for the new language
+                    deleted_defaults = set(self.config.get("deleted_default_categories", []))
+                    
+                    # Check which deleted categories exist in the new language
+                    new_language_defaults = self.app_instance.file_type_categories[new_language]
+                    deleted_in_new_language = []
+                    for deleted_category in deleted_defaults:
+                        if deleted_category in new_language_defaults:
+                            deleted_in_new_language.append(deleted_category)
+                    
+                    # Update deleted_default_categories to only include categories that exist in the new language
+                    self.config["deleted_default_categories"] = deleted_in_new_language
+                    
+                    available_defaults = {}
+                    for category, extensions in new_default_types.items():
+                        if category not in deleted_in_new_language:
+                            available_defaults[category] = extensions
+                    
+                    print(f"Available default categories for new language '{new_language}': {list(available_defaults.keys())}")
+                    print(f"Deleted default categories in new language: {deleted_in_new_language}")
+                    
+                    # Merge available defaults and custom categories
+                    merged_file_types = available_defaults.copy()
+                    merged_file_types.update(custom_categories)
+                    self.config["file_types"] = merged_file_types
+                    
+                    print(f"Final merged categories: {list(self.config['file_types'].keys())}")
             
             self.save_callback()
             if self.app_instance:
