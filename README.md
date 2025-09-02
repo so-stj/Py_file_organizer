@@ -53,7 +53,7 @@ python file_organizer.py
 
 ### 1. First Startup
 - Language selection dialog appears on first run
-- Choose your preferred language (Japanese, English, or Swedish)
+- Choose your language (Japanese, English, or Swedish)
 - You can change the language later in Settings
 
 ### 2. Basic File Organization
