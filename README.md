@@ -1,6 +1,4 @@
-# File Organizer GUI Application
-
-![Logo](icon.ico)
+# File Organizer GUI Application ![Logo](icon.ico)
 
 An automated file classification and GUI-operated file management application with multilingual support.
 
