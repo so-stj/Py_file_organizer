@@ -1,4 +1,4 @@
-# File Organizer System
+# File Organizer GUI Application
 
 An automated file classification and GUI-operated file management application with multilingual support.
 
