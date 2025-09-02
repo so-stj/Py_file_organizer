@@ -4,36 +4,36 @@ An automated file classification and GUI-operated file management application wi
 
 ## Features
 
-### 🗂️ Automatic File Organization
+### Automatic File Organization
 - Automatically classify files by category based on file extensions
 - Auto-recognition of images, videos, audio, documents, spreadsheets, presentations, archives, executables, and code files
 - Optional date-based folder creation
 - Automatic renaming of duplicate files
 
-### 🔍 File Search & Separation
+### File Search & Separation
 - Advanced file search using regular expressions
 - Display of search results
 - Bulk separation of matching files
 
-### 🌍 Multilingual Support
+### Multilingual Support
 - Support for Japanese, English, and Swedish
 - Language selection dialog on first startup
 - Dynamic language switching in settings
 - Localized UI elements and messages
 
-### ⚙️ Customizable Settings
+### Customizable Settings
 - Add, edit, and delete file types
 - Customize organization rules
 - Persistent settings with configuration file
 - Language preferences
 
-### 🛠️ Maintenance Features
+### Maintenance Features
 - Clear cache (recent directories)
 - Reset all settings to defaults
 - Reset language selection for first startup dialog
 - Configuration file management
 
-### 📊 Real-time Monitoring
+### Real-time Monitoring
 - Progress bar showing processing status
 - Detailed operation logs
 - Stop/resume processing functionality
@@ -166,7 +166,7 @@ The application saves settings to a configuration file:
 
 ## Important Notes
 
-⚠️ **Important Warnings**
+**Important Warnings**
 
 - File move operations cannot be undone
 - Please backup important files before processing
