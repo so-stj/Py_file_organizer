@@ -2,6 +2,9 @@
 """
 FileOrganizer PyInstaller Specification File
 This file configures how PyInstaller should build the executable
+
+Version: 1.2.0
+Features: Custom separation destination selection, multilingual support
 """
 
 block_cipher = None
@@ -39,6 +42,7 @@ a = Analysis(
         'src.gui.language_dialog',
         'src.gui.settings_window',
         'src.gui.file_type_dialog',
+        'src.gui.separation_destination_dialog',
         'src.main_app'
     ],
     hookspath=[],
