@@ -4,7 +4,7 @@ block_cipher = None
 
 a = Analysis(
     ['main.py'],
-    pathex=['src'],
+    pathex=['src', '.'],
     binaries=[],
     datas=[('src', 'src')],
     hiddenimports=[
