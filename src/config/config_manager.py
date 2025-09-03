@@ -20,7 +20,6 @@ class ConfigManager:
         self.current_language = "ja"
         self.languages = self._setup_languages()
         self.file_type_categories = self._setup_file_type_categories()
-        self.deleted_default_categories = set()
         
         # Load configuration
         self.load_config()
@@ -384,16 +383,50 @@ class ConfigManager:
                 new_default_categories = self.file_type_categories[language].copy()
                 print(f"New language '{language}' default categories: {list(new_default_categories.keys())}")
                 
-                # Merge new defaults with custom categories
+                # Get deleted default categories for new language
+                deleted_defaults = self.config.get("deleted_default_categories", [])
+                deleted_categories = set()
+                
+                for deletion_info in deleted_defaults:
+                    if isinstance(deletion_info, dict):
+                        deleted_category = deletion_info.get("category")
+                        deleted_language = deletion_info.get("language")
+                        deleted_extensions = deletion_info.get("extensions")
+                        
+                        # Check if this deletion applies to new language
+                        if deleted_language == language:
+                            deleted_categories.add(deleted_category)
+                            print(f"  '{deleted_category}' is marked as deleted for new language")
+                        else:
+                            # Check if extensions match any category in new language
+                            for new_category, new_extensions in new_default_categories.items():
+                                if new_extensions == deleted_extensions:
+                                    deleted_categories.add(new_category)
+                                    print(f"  '{new_category}' is marked as deleted (equivalent to '{deleted_category}' from '{deleted_language}')")
+                                    break
+                    elif isinstance(deletion_info, str):
+                        # Handle old string format
+                        if deletion_info in new_default_categories:
+                            deleted_categories.add(deletion_info)
+                            print(f"  '{deletion_info}' is marked as deleted (old format)")
+                
+                print(f"Deleted categories for new language: {list(deleted_categories)}")
+                
+                # Merge new defaults with custom categories (excluding deleted ones)
                 merged_categories = {}
                 
-                # Add new language defaults
+                # Add new language defaults (excluding deleted ones)
                 for category, extensions in new_default_categories.items():
-                    merged_categories[category] = extensions
+                    if category not in deleted_categories:
+                        merged_categories[category] = extensions
+                        print(f"  Added default category: '{category}'")
+                    else:
+                        print(f"  Skipped deleted default category: '{category}'")
                 
                 # Add custom categories
                 for category, extensions in custom_categories.items():
                     merged_categories[category] = extensions
+                    print(f"  Added custom category: '{category}'")
                 
                 # Update config
                 self.config["file_types"] = merged_categories
@@ -466,7 +499,54 @@ class ConfigManager:
     def remove_file_type(self, category: str) -> None:
         """Remove a file type category"""
         if category in self.config["file_types"]:
+            print(f"=== Removing file type category ===")
+            print(f"Category: {category}")
+            
+            # Check if this is a default category
+            is_default_category = False
+            for lang in self.file_type_categories:
+                if category in self.file_type_categories[lang]:
+                    is_default_category = True
+                    print(f"  '{category}' is a default category in language '{lang}'")
+                    
+                    # Record this deletion to prevent it from being restored
+                    if "deleted_default_categories" not in self.config:
+                        self.config["deleted_default_categories"] = []
+                    
+                    deletion_info = {
+                        "category": category,
+                        "language": lang,
+                        "extensions": self.file_type_categories[lang][category]
+                    }
+                    
+                    # Check if already recorded
+                    already_deleted = False
+                    for existing_deletion in self.config["deleted_default_categories"]:
+                        if (isinstance(existing_deletion, dict) and 
+                            existing_deletion.get("category") == category and
+                            existing_deletion.get("language") == lang):
+                            already_deleted = True
+                            break
+                    
+                    if not already_deleted:
+                        self.config["deleted_default_categories"].append(deletion_info)
+                        print(f"  Recorded deletion of default category '{category}' from '{lang}'")
+                    else:
+                        print(f"  Deletion already recorded for '{category}' from '{lang}'")
+                    break
+            
+            if not is_default_category:
+                print(f"  '{category}' is a custom category")
+            
+            # Remove from config
             del self.config["file_types"][category]
+            print(f"  Removed '{category}' from config")
+            
+            # Save configuration immediately
+            self.save_config()
+            print(f"  Config saved after removal")
+        else:
+            print(f"Category '{category}' not found in config")
     
     def get_recent_directories(self) -> List[str]:
         """Get recent directories list"""
@@ -543,10 +623,39 @@ class ConfigManager:
             if self.current_language in self.file_type_categories:
                 current_defaults = self.file_type_categories[self.current_language]
                 
-                # Check if any current language defaults are missing
+                # Get deleted default categories for current language
+                deleted_defaults = self.config.get("deleted_default_categories", [])
+                deleted_categories = set()
+                
+                for deletion_info in deleted_defaults:
+                    if isinstance(deletion_info, dict):
+                        deleted_category = deletion_info.get("category")
+                        deleted_language = deletion_info.get("language")
+                        deleted_extensions = deletion_info.get("extensions")
+                        
+                        # Check if this deletion applies to current language
+                        if deleted_language == self.current_language:
+                            deleted_categories.add(deleted_category)
+                            print(f"  '{deleted_category}' is marked as deleted for current language")
+                        else:
+                            # Check if extensions match any category in current language
+                            for current_category, current_extensions in current_defaults.items():
+                                if current_extensions == deleted_extensions:
+                                    deleted_categories.add(current_category)
+                                    print(f"  '{current_category}' is marked as deleted (equivalent to '{deleted_category}' from '{deleted_language}')")
+                                    break
+                    elif isinstance(deletion_info, str):
+                        # Handle old string format
+                        if deletion_info in current_defaults:
+                            deleted_categories.add(deletion_info)
+                            print(f"  '{deletion_info}' is marked as deleted (old format)")
+                
+                print(f"Deleted categories for current language: {list(deleted_categories)}")
+                
+                # Check if any current language defaults are missing (excluding deleted ones)
                 missing_defaults = {}
                 for category, extensions in current_defaults.items():
-                    if category not in current_file_types:
+                    if category not in current_file_types and category not in deleted_categories:
                         missing_defaults[category] = extensions
                 
                 if missing_defaults:
@@ -560,6 +669,8 @@ class ConfigManager:
                     self.config["file_types"] = current_file_types
                     self.save_config()
                     print(f"Updated file types: {list(current_file_types.keys())}")
+                else:
+                    print(f"No missing default categories to add (all defaults present or deleted)")
     
     def save_config(self) -> None:
         """Save configuration to file"""
