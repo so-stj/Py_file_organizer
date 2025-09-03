@@ -351,9 +351,60 @@ class ConfigManager:
     def change_language(self, language: str) -> None:
         """Change current language"""
         if language in self.languages:
+            print(f"Changing language from '{self.current_language}' to '{language}'")
+            
+            # Get current file types before language change
+            current_file_types = self.config.get("file_types", {}).copy()
+            print(f"Current file types: {list(current_file_types.keys())}")
+            
+            # Identify custom categories (not in any default language)
+            custom_categories = {}
+            for category, extensions in current_file_types.items():
+                is_default_in_any_language = False
+                for lang in self.file_type_categories:
+                    if category in self.file_type_categories[lang]:
+                        is_default_in_any_language = True
+                        print(f"  '{category}' is default in language '{lang}'")
+                        break
+                
+                if not is_default_in_any_language:
+                    custom_categories[category] = extensions
+                    print(f"  '{category}' is CUSTOM category")
+                else:
+                    print(f"  '{category}' is DEFAULT category")
+            
+            print(f"Custom categories to preserve: {list(custom_categories.keys())}")
+            
+            # Update language
             self.current_language = language
             self.config["language"] = language
-            self.save_config()
+            
+            # Get new language's default categories
+            if language in self.file_type_categories:
+                new_default_categories = self.file_type_categories[language].copy()
+                print(f"New language '{language}' default categories: {list(new_default_categories.keys())}")
+                
+                # Merge new defaults with custom categories
+                merged_categories = {}
+                
+                # Add new language defaults
+                for category, extensions in new_default_categories.items():
+                    merged_categories[category] = extensions
+                
+                # Add custom categories
+                for category, extensions in custom_categories.items():
+                    merged_categories[category] = extensions
+                
+                # Update config
+                self.config["file_types"] = merged_categories
+                print(f"Final merged categories: {list(merged_categories.keys())}")
+                
+                # Save configuration
+                self.save_config()
+            else:
+                print(f"Language '{language}' not found in file type categories")
+        else:
+            print(f"Language '{language}' not supported")
     
     def get_file_types(self) -> Dict[str, List[str]]:
         """Get current file types configuration"""
@@ -403,13 +454,55 @@ class ConfigManager:
                     saved_config = json.load(f)
                     self.config.update(saved_config)
                 print(f"Config file loaded: {self.config_file}")
+                print(f"Loaded config content: {self.config}")
             except Exception as e:
                 print(f"Config file loading error: {e}")
                 # Reset to defaults if loading fails
                 self.config = self._get_default_config()
+        else:
+            print(f"Config file not found: {self.config_file}")
         
         # Set current language from config
         self.current_language = self.config.get("language", "ja")
+        
+        # Initialize file types if not present
+        self._initialize_file_types()
+    
+    def _initialize_file_types(self) -> None:
+        """Initialize file types from current language defaults if not present"""
+        if not self.config.get("file_types"):
+            print("No file types in config, initializing from current language defaults")
+            if self.current_language in self.file_type_categories:
+                self.config["file_types"] = self.file_type_categories[self.current_language].copy()
+                print(f"Initialized file types for language '{self.current_language}': {list(self.config['file_types'].keys())}")
+                self.save_config()
+            else:
+                print(f"Language '{self.current_language}' not found in file type categories")
+        else:
+            print(f"File types already present in config: {list(self.config['file_types'].keys())}")
+            
+            # Check if we need to merge with current language defaults
+            current_file_types = self.config.get("file_types", {})
+            if self.current_language in self.file_type_categories:
+                current_defaults = self.file_type_categories[self.current_language]
+                
+                # Check if any current language defaults are missing
+                missing_defaults = {}
+                for category, extensions in current_defaults.items():
+                    if category not in current_file_types:
+                        missing_defaults[category] = extensions
+                
+                if missing_defaults:
+                    print(f"Adding missing default categories for language '{self.current_language}': {list(missing_defaults.keys())}")
+                    
+                    # Add missing defaults
+                    for category, extensions in missing_defaults.items():
+                        current_file_types[category] = extensions
+                    
+                    # Update config
+                    self.config["file_types"] = current_file_types
+                    self.save_config()
+                    print(f"Updated file types: {list(current_file_types.keys())}")
     
     def save_config(self) -> None:
         """Save configuration to file"""

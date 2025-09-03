@@ -30,16 +30,16 @@ class FileOrganizerApp:
         self.file_organizer_core = FileOrganizerCore(self.config_manager)
         self.logger = Logger()
         
-        # Initialize variables first
+        # Initialize UI first
+        self.root = tk.Tk()
+        self.root.geometry("1000x700")
+        self.root.configure(bg='#f0f0f0')
+        
+        # Initialize variables after root window is created
         self.source_directory = tk.StringVar()
         self.target_directory = tk.StringVar()
         self.search_pattern = tk.StringVar()
         self.organizing = False
-        
-        # Initialize UI
-        self.root = tk.Tk()
-        self.root.geometry("1000x700")
-        self.root.configure(bg='#f0f0f0')
         
         # Check if this is first run and show language selection
         if not self.config_manager.get_setting("language_selected", False):
