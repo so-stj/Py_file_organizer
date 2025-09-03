@@ -17,6 +17,7 @@ from core.file_organizer_core import FileOrganizerCore
 from utils.logger import Logger
 from gui.language_dialog import LanguageSelectionDialog
 from gui.settings_window import SettingsWindow
+from gui.separation_destination_dialog import SeparationDestinationDialog
 
 
 class FileOrganizerApp:
@@ -99,31 +100,11 @@ class FileOrganizerApp:
         
         # Title
         title_label = ttk.Label(main_frame, text=self.config_manager.get_text("app_title"), 
-                               font=('Arial', 16, 'bold'))
+                               font=("Arial", 16, "bold"))
         title_label.grid(row=0, column=0, columnspan=3, pady=(0, 20))
         
         # Directory selection section
-        self.create_directory_section(main_frame)
-        
-        # Control button section
-        self.create_control_section(main_frame)
-        
-        # Search and separation section
-        self.create_search_section(main_frame)
-        
-        # Log display area
-        self.create_log_section(main_frame)
-        
-        # Status bar
-        self.status_var = tk.StringVar()
-        self.status_var.set(self.config_manager.get_text("ready"))
-        status_bar = ttk.Label(main_frame, textvariable=self.status_var, 
-                              relief=tk.SUNKEN, anchor=tk.W)
-        status_bar.grid(row=6, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=(10, 0))
-    
-    def create_directory_section(self, parent):
-        """Create directory selection section"""
-        dir_frame = ttk.LabelFrame(parent, text=self.config_manager.get_text("directory_settings"), padding="10")
+        dir_frame = ttk.LabelFrame(main_frame, text=self.config_manager.get_text("directory_settings"), padding="10")
         dir_frame.grid(row=1, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=(0, 10))
         dir_frame.columnconfigure(1, weight=1)
         
@@ -138,10 +119,9 @@ class FileOrganizerApp:
         target_entry = ttk.Entry(dir_frame, textvariable=self.target_directory, width=50)
         target_entry.grid(row=1, column=1, sticky=(tk.W, tk.E), padx=(0, 10), pady=(10, 0))
         ttk.Button(dir_frame, text=self.config_manager.get_text("browse"), command=self.browse_target).grid(row=1, column=2, pady=(10, 0))
-    
-    def create_control_section(self, parent):
-        """Create control button section"""
-        control_frame = ttk.LabelFrame(parent, text=self.config_manager.get_text("operations"), padding="10")
+        
+        # Control button section
+        control_frame = ttk.LabelFrame(main_frame, text=self.config_manager.get_text("operations"), padding="10")
         control_frame.grid(row=2, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=(0, 10))
         
         # Auto organize button
@@ -151,7 +131,7 @@ class FileOrganizerApp:
         
         # Stop button
         self.stop_btn = ttk.Button(control_frame, text=self.config_manager.get_text("stop"), 
-                                  command=self.stop_organize, state=tk.DISABLED)
+                                 command=self.stop_organize, state=tk.DISABLED)
         self.stop_btn.grid(row=0, column=1, padx=(0, 10))
         
         # Settings button
@@ -162,10 +142,9 @@ class FileOrganizerApp:
         self.progress_bar = ttk.Progressbar(control_frame, variable=self.progress_var, 
                                            maximum=100, length=300)
         self.progress_bar.grid(row=1, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=(10, 0))
-    
-    def create_search_section(self, parent):
-        """Create search and separation section"""
-        search_frame = ttk.LabelFrame(parent, text=self.config_manager.get_text("file_search_separation"), padding="10")
+        
+        # Search and separation section
+        search_frame = ttk.LabelFrame(main_frame, text=self.config_manager.get_text("file_search_separation"), padding="10")
         search_frame.grid(row=3, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=(0, 10))
         search_frame.columnconfigure(1, weight=1)
         
@@ -178,19 +157,22 @@ class FileOrganizerApp:
         ttk.Button(search_frame, text=self.config_manager.get_text("search"), command=self.search_files).grid(row=0, column=2, padx=(0, 10))
         
         # Separate button
-        ttk.Button(search_frame, text=self.config_manager.get_text("separate_files"), command=self.separate_files).grid(row=0, column=3)
+        ttk.Button(search_frame, text=self.config_manager.get_text("separate_files"), command=self.separate_files).grid(row=0, column=3, padx=(0, 10))
+        
+        # Separate with custom destination button
+        ttk.Button(search_frame, text=self.config_manager.get_text("select_destination"), 
+                  command=self.separate_files_with_custom_destination).grid(row=0, column=4)
         
         # Search result display
         result_frame = ttk.Frame(search_frame)
-        result_frame.grid(row=1, column=0, columnspan=4, sticky=(tk.W, tk.E), pady=(10, 0))
+        result_frame.grid(row=1, column=0, columnspan=5, sticky=(tk.W, tk.E), pady=(10, 0))
         result_frame.columnconfigure(0, weight=1)
         
         self.result_text = scrolledtext.ScrolledText(result_frame, height=6, width=80)
         self.result_text.grid(row=0, column=0, sticky=(tk.W, tk.E))
-    
-    def create_log_section(self, parent):
-        """Create log display section"""
-        log_frame = ttk.LabelFrame(parent, text=self.config_manager.get_text("operation_log"), padding="10")
+        
+        # Log display area
+        log_frame = ttk.LabelFrame(main_frame, text=self.config_manager.get_text("operation_log"), padding="10")
         log_frame.grid(row=4, column=0, columnspan=3, sticky=(tk.W, tk.E, tk.N, tk.S), pady=(0, 10))
         log_frame.columnconfigure(0, weight=1)
         log_frame.rowconfigure(0, weight=1)
@@ -200,6 +182,13 @@ class FileOrganizerApp:
         
         # Log clear button
         ttk.Button(log_frame, text=self.config_manager.get_text("clear_log"), command=self.clear_log).grid(row=1, column=0, pady=(10, 0))
+        
+        # Status bar
+        self.status_var = tk.StringVar()
+        self.status_var.set(self.config_manager.get_text("ready"))
+        status_bar = ttk.Label(main_frame, textvariable=self.status_var, 
+                              relief=tk.SUNKEN, anchor=tk.W)
+        status_bar.grid(row=6, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=(10, 0))
     
     def browse_source(self):
         """Select source directory"""
@@ -330,7 +319,7 @@ class FileOrganizerApp:
             self.logger.log_error(f"{self.config_manager.get_text('search_error')} {e}")
     
     def separate_files(self):
-        """Separate matching files"""
+        """Separate matching files with default options"""
         # Validate target directory
         if not self.target_directory.get():
             messagebox.showerror("Error", self.config_manager.get_text("error_target_required"))
@@ -347,11 +336,57 @@ class FileOrganizerApp:
             target_path = Path(self.target_directory.get())
             pattern = self.search_pattern.get()
             
-            # Separate files
+            # Separate files with default options
             moved_count, separate_path = self.file_organizer_core.separate_files(source_path, target_path, pattern)
             
             self.logger.log_message(f"{self.config_manager.get_text('separation_complete')} {moved_count} {self.config_manager.get_text('files_moved_to')} {separate_path.name} {self.config_manager.get_text('moved_to')}")
             messagebox.showinfo("Complete", f"{moved_count} {self.config_manager.get_text('files_separated')}\n{self.config_manager.get_text('save_location')} {separate_path}")
+            
+        except Exception as e:
+            self.logger.log_error(f"{self.config_manager.get_text('separation_error')} {e}")
+            messagebox.showerror("Error", f"{self.config_manager.get_text('separation_error_occurred')} {e}")
+    
+    def separate_files_with_custom_destination(self):
+        """Separate files with custom destination selection"""
+        # Validate source directory
+        if not self.source_directory.get():
+            messagebox.showerror("Error", self.config_manager.get_text("error_source_required"))
+            return
+        
+        # Validate search pattern
+        is_valid, error_message = self.file_organizer_core.validate_search_pattern(self.search_pattern.get())
+        if not is_valid:
+            messagebox.showerror("Error", error_message)
+            return
+        
+        try:
+            # Show destination selection dialog
+            dialog = SeparationDestinationDialog(self.root, self.config_manager, self.target_directory.get())
+            result = dialog.show()
+            
+            if result:
+                source_path = Path(self.source_directory.get())
+                pattern = self.search_pattern.get()
+                
+                if result['type'] == 'new_in_current':
+                    # Create new folder in current target
+                    target_path = Path(result['path'])
+                    target_path.mkdir(parents=True, exist_ok=True)
+                    
+                    # Separate files with custom folder name
+                    moved_count, separate_path = self.file_organizer_core.separate_files(
+                        source_path, target_path.parent, pattern, result['folder_name'])
+                    
+                elif result['type'] == 'existing':
+                    # Use existing folder directly (no subfolder creation)
+                    target_path = Path(result['path'])
+                    
+                    # Move files directly to existing folder
+                    moved_count, separate_path = self.file_organizer_core.move_files_to_existing_folder(
+                        source_path, target_path, pattern)
+                
+                self.logger.log_message(f"{self.config_manager.get_text('separation_complete')} {moved_count} {self.config_manager.get_text('files_moved_to')} {separate_path.name} {self.config_manager.get_text('moved_to')}")
+                messagebox.showinfo("Complete", f"{moved_count} {self.config_manager.get_text('files_separated')}\n{self.config_manager.get_text('save_location')} {separate_path}")
             
         except Exception as e:
             self.logger.log_error(f"{self.config_manager.get_text('separation_error')} {e}")

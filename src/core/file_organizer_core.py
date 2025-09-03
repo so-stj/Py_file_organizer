@@ -95,12 +95,17 @@ class FileOrganizerCore:
         
         return matching_files
     
-    def separate_files(self, source_path: Path, target_path: Path, pattern: str) -> Tuple[int, Path]:
+    def separate_files(self, source_path: Path, target_path: Path, pattern: str, 
+                      custom_folder_name: Optional[str] = None) -> Tuple[int, Path]:
         """Separate files matching a pattern to a separate directory"""
         try:
-            # Create separation directory with timestamp
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            separate_path = target_path / f"分離_{timestamp}"
+            # Create separation directory with custom name or timestamp
+            if custom_folder_name:
+                separate_path = target_path / custom_folder_name
+            else:
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                separate_path = target_path / f"分離_{timestamp}"
+            
             separate_path.mkdir(parents=True, exist_ok=True)
             
             # Find matching files
@@ -127,6 +132,34 @@ class FileOrganizerCore:
         except Exception as e:
             print(f"Separation error: {e}")
             return 0, target_path
+    
+    def move_files_to_existing_folder(self, source_path: Path, target_folder: Path, pattern: str) -> Tuple[int, Path]:
+        """Move files matching a pattern directly to an existing folder (no subfolder creation)"""
+        try:
+            # Find matching files
+            matching_files = self.search_files(source_path, pattern)
+            
+            moved_count = 0
+            for file_path in matching_files:
+                try:
+                    destination = target_folder / file_path.name
+                    
+                    # Handle duplicates
+                    if destination.exists():
+                        destination = self._generate_unique_filename(destination)
+                    
+                    # Move file
+                    shutil.move(str(file_path), str(destination))
+                    moved_count += 1
+                    
+                except Exception as e:
+                    print(f"Error moving {file_path.name}: {e}")
+            
+            return moved_count, target_folder
+            
+        except Exception as e:
+            print(f"Move to existing folder error: {e}")
+            return 0, target_folder
     
     def get_files_for_organization(self, source_path: Path) -> List[Path]:
         """Get list of files to organize from source directory"""

@@ -14,6 +14,10 @@ An automated file classification and GUI-operated file management application wi
 - Advanced file search using regular expressions
 - Display of search results
 - Bulk separation of matching files
+- **Custom separation destination selection**
+  - Choose existing folders as separation destinations
+  - No additional subfolder creation when using existing folders
+  - Direct file movement to selected destinations
 
 ### Multilingual Support
 - Support for Japanese, English, and Swedish
@@ -80,8 +84,11 @@ python file_organizer.py
    - Search results are displayed in the result area
 
 3. **Separate Files**
-   - Click "Separate Matching Files" to move them
-   - Matching files are moved to a timestamped dedicated folder
+   - Click "Separate Matching Files" to move them to default location
+   - **Custom Separation Destination**
+     - Click "分離先選択" (Select Destination) button
+     - Choose an existing folder as the separation destination
+     - Files are moved directly to the selected folder (no subfolder creation)
 
 ### 4. Customize Settings
 
@@ -198,6 +205,14 @@ A: Custom categories are preserved across language changes. Check the File Types
 This project is released under the MIT License.
 
 ## Version History
+
+- v1.2.0: Custom Separation Destination & Enhanced File Management
+  - **Custom separation destination selection**
+    - Choose existing folders as separation destinations
+    - Direct file movement without creating additional subfolders
+    - Enhanced user control over file organization
+  - Improved file separation workflow
+  - Better user experience for destination selection
 
 - v1.1.0: Multilingual Support & Maintenance Features
   - Added Japanese, English, and Swedish language support
