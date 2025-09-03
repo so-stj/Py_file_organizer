@@ -1,6 +1,6 @@
 {
   "file_types": {
-    "画像": [
+    "Images": [
       ".jpg",
       ".jpeg",
       ".png",
@@ -9,7 +9,7 @@
       ".tiff",
       ".webp"
     ],
-    "動画": [
+    "Videos": [
       ".mp4",
       ".avi",
       ".mov",
@@ -18,7 +18,7 @@
       ".mkv",
       ".webm"
     ],
-    "音声": [
+    "Audio": [
       ".mp3",
       ".wav",
       ".flac",
@@ -26,7 +26,7 @@
       ".ogg",
       ".wma"
     ],
-    "文書": [
+    "Documents": [
       ".pdf",
       ".doc",
       ".docx",
@@ -34,109 +34,47 @@
       ".rtf",
       ".odt"
     ],
-    "スプレッドシート": [
+    "Spreadsheets": [
       ".xls",
       ".xlsx",
       ".csv",
       ".ods"
     ],
-    "プレゼンテーション": [
+    "Presentations": [
       ".ppt",
       ".pptx",
       ".odp"
     ],
-    "アーカイブ": [
+    "Archives": [
       ".zip",
       ".rar",
       ".7z",
       ".tar",
       ".gz"
     ],
-    "xml": [
-      ".xml"
+    "Executables": [
+      ".exe",
+      ".msi",
+      ".dmg",
+      ".deb",
+      ".rpm"
+    ],
+    "Code": [
+      ".py",
+      ".js",
+      ".html",
+      ".css",
+      ".java",
+      ".cpp",
+      ".c",
+      ".php"
     ]
   },
   "recent_directories": [],
   "auto_organize": true,
   "create_date_folders": true,
   "move_duplicates": true,
-  "language": "ja",
+  "language": "en",
   "language_selected": true,
-  "deleted_default_categories": [
-    {
-      "category": "コード",
-      "language": "ja",
-      "extensions": [
-        ".py",
-        ".js",
-        ".html",
-        ".css",
-        ".java",
-        ".cpp",
-        ".c",
-        ".php"
-      ]
-    },
-    {
-      "category": "コード",
-      "language": "ja",
-      "extensions": [
-        ".py",
-        ".js",
-        ".html",
-        ".css",
-        ".java",
-        ".cpp",
-        ".c",
-        ".php"
-      ]
-    },
-    {
-      "category": "コード",
-      "language": "ja",
-      "extensions": [
-        ".py",
-        ".js",
-        ".html",
-        ".css",
-        ".java",
-        ".cpp",
-        ".c",
-        ".php"
-      ]
-    },
-    {
-      "category": "実行ファイル",
-      "language": "ja",
-      "extensions": [
-        ".exe",
-        ".msi",
-        ".dmg",
-        ".deb",
-        ".rpm"
-      ]
-    },
-    {
-      "category": "実行ファイル",
-      "language": "ja",
-      "extensions": [
-        ".exe",
-        ".msi",
-        ".dmg",
-        ".deb",
-        ".rpm"
-      ]
-    },
-    {
-      "category": "実行ファイル",
-      "language": "ja",
-      "extensions": [
-        ".exe",
-        ".msi",
-        ".dmg",
-        ".deb",
-        ".rpm"
-      ]
-    }
-  ]
+  "deleted_default_categories": []
 }
