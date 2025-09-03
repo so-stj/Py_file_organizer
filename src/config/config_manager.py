@@ -398,9 +398,20 @@ class ConfigManager:
                 # Update config
                 self.config["file_types"] = merged_categories
                 print(f"Final merged categories: {list(merged_categories.keys())}")
+                print(f"Config updated with merged categories")
                 
                 # Save configuration
+                print(f"About to save config after language change...")
                 self.save_config()
+                print(f"Config saved after language change")
+                
+                # Verify the config was actually updated
+                if self.config.get("file_types"):
+                    print(f"✓ Config verification after language change:")
+                    print(f"  - file_types count: {len(self.config['file_types'])}")
+                    print(f"  - file_types keys: {list(self.config['file_types'].keys())}")
+                else:
+                    print(f"✗ ERROR: Config file_types is empty after language change!")
             else:
                 print(f"Language '{language}' not found in file type categories")
         else:
@@ -416,7 +427,41 @@ class ConfigManager:
     
     def add_file_type(self, category: str, extensions: List[str]) -> None:
         """Add a new file type category"""
+        print(f"=== Adding custom category ===")
+        print(f"Category: {category}")
+        print(f"Extensions: {extensions}")
+        print(f"Current language: {self.current_language}")
+        
+        # Check if this is a custom category
+        is_default_in_any_language = False
+        for lang in self.file_type_categories:
+            if category in self.file_type_categories[lang]:
+                is_default_in_any_language = True
+                print(f"  WARNING: '{category}' already exists in default language '{lang}'")
+                break
+        
+        if not is_default_in_any_language:
+            print(f"  ✓ Confirmed as custom category")
+        else:
+            print(f"  ✗ This is a default category, not custom")
+        
+        # Add to config
         self.config["file_types"][category] = extensions
+        print(f"  Added to config['file_types']: {list(self.config['file_types'].keys())}")
+        
+        # Save configuration immediately
+        print(f"  About to save config...")
+        self.save_config()
+        print(f"  Config saved")
+        
+        # Verify the category was actually saved
+        if category in self.config["file_types"]:
+            print(f"  ✓ Category '{category}' successfully saved in config")
+        else:
+            print(f"  ✗ ERROR: Category '{category}' was NOT saved in config!")
+        
+        print(f"  Final categories count: {len(self.config['file_types'])}")
+        print(f"  Final categories: {list(self.config['file_types'].keys())}")
     
     def remove_file_type(self, category: str) -> None:
         """Remove a file type category"""
@@ -448,15 +493,26 @@ class ConfigManager:
     
     def load_config(self) -> None:
         """Load configuration from file"""
+        print(f"=== load_config called ===")
+        print(f"Config file path: {self.config_file}")
+        print(f"Config file exists: {os.path.exists(self.config_file)}")
+        
         if os.path.exists(self.config_file):
             try:
                 with open(self.config_file, 'r', encoding='utf-8') as f:
                     saved_config = json.load(f)
+                    print(f"Raw saved config: {saved_config}")
+                    
+                    # Update config
                     self.config.update(saved_config)
-                print(f"Config file loaded: {self.config_file}")
-                print(f"Loaded config content: {self.config}")
+                    print(f"Config updated with saved content")
+                    print(f"Config file loaded: {self.config_file}")
+                    print(f"Loaded config content: {self.config}")
+                    print(f"Loaded file_types: {list(self.config.get('file_types', {}).keys())}")
             except Exception as e:
                 print(f"Config file loading error: {e}")
+                import traceback
+                traceback.print_exc()
                 # Reset to defaults if loading fails
                 self.config = self._get_default_config()
         else:
@@ -464,6 +520,7 @@ class ConfigManager:
         
         # Set current language from config
         self.current_language = self.config.get("language", "ja")
+        print(f"Current language set to: {self.current_language}")
         
         # Initialize file types if not present
         self._initialize_file_types()
@@ -507,17 +564,45 @@ class ConfigManager:
     def save_config(self) -> None:
         """Save configuration to file"""
         try:
+            print(f"=== save_config called ===")
+            print(f"Config file path: {self.config_file}")
+            print(f"Current config state:")
+            print(f"  - file_types count: {len(self.config.get('file_types', {}))}")
+            print(f"  - file_types keys: {list(self.config.get('file_types', {}).keys())}")
+            print(f"  - language: {self.config.get('language', 'unknown')}")
+            
             # Ensure directory exists
             config_dir = os.path.dirname(self.config_file)
             if config_dir and not os.path.exists(config_dir):
                 os.makedirs(config_dir, exist_ok=True)
+                print(f"Directory created: {config_dir}")
             
             with open(self.config_file, 'w', encoding='utf-8') as f:
                 json.dump(self.config, f, ensure_ascii=False, indent=2)
             
             print(f"Config file saved: {self.config_file}")
+            print(f"Saved categories count: {len(self.config.get('file_types', {}))}")
+            
+            # Verify file was created
+            if os.path.exists(self.config_file):
+                print(f"✓ File created successfully: {self.config_file}")
+                
+                # Verify the saved content
+                try:
+                    with open(self.config_file, 'r', encoding='utf-8') as f:
+                        saved_content = json.load(f)
+                    print(f"✓ File content verified:")
+                    print(f"  - Saved file_types count: {len(saved_content.get('file_types', {}))}")
+                    print(f"  - Saved file_types keys: {list(saved_content.get('file_types', {}).keys())}")
+                except Exception as verify_error:
+                    print(f"✗ Error verifying saved content: {verify_error}")
+            else:
+                print(f"✗ File was not created: {self.config_file}")
+                
         except Exception as e:
             print(f"Config save error: {e}")
+            import traceback
+            traceback.print_exc()
     
     def reset_to_defaults(self) -> None:
         """Reset configuration to defaults"""
