@@ -1,155 +1,176 @@
-# ファイル整理アプリケーション リファクタリング
+# File Organizer Application Refactoring
 
-## 概要
+## Overview
 
-元のコードで指摘された「単一責任原則が不足している」問題を解決するため、アプリケーションを複数のクラスに分割し、各クラスが単一の責任を持つようにリファクタリングしました。
+This document describes the refactoring of the File Organizer application to address the "Single Responsibility Principle violation" issue identified in the original code. The application has been restructured into multiple classes, each with a single, well-defined responsibility.
 
-## 改善前の問題点
+## Key Features Added in v1.2.0
 
-### 1. `FileOrganizer`クラスが多すぎる責任を持っていた
-- GUI管理
-- ファイル操作
-- 設定管理
-- 言語管理
-- ログ管理
-- ファイル分類ロジック
+### Custom Separation Destination Selection
+- **Separation Destination Dialog**: New dialog for selecting custom separation destinations
+- **Direct File Movement**: Files can be moved directly to existing folders without creating additional subfolders
+- **Enhanced User Control**: Users have full control over where separated files are placed
+- **Improved Workflow**: Better separation workflow with destination selection
 
-### 2. `SettingsWindow`クラスも複数の責任を持っていた
-- 設定UI管理
-- ファイルタイプ管理
-- 言語設定管理
-- メンテナンス機能
+### Enhanced File Management
+- **Existing Folder Support**: Choose existing folders as separation destinations
+- **No Subfolder Creation**: Direct movement to selected destinations
+- **Flexible Organization**: More intuitive file organization process
 
-### 3. 設定とビジネスロジックが混在していた
+## Issues Before Refactoring
 
-## リファクタリング後の構造
+### 1. `FileOrganizer` Class Had Too Many Responsibilities
+- GUI Management
+- File Operations
+- Configuration Management
+- Language Management
+- Log Management
+- File Classification Logic
+
+### 2. `SettingsWindow` Class Also Had Multiple Responsibilities
+- Settings UI Management
+- File Type Management
+- Language Settings Management
+- Maintenance Features
+
+### 3. Configuration and Business Logic Were Mixed
+
+## Structure After Refactoring
 
 ```
 src/
 ├── __init__.py
-├── main_app.py              # メインアプリケーション（UI調整）
+├── main_app.py              # Main Application (UI Coordination)
 ├── config/
 │   ├── __init__.py
-│   └── config_manager.py    # 設定管理専用
+│   └── config_manager.py    # Configuration Management Only
 ├── core/
 │   ├── __init__.py
-│   └── file_organizer_core.py  # ファイル操作ロジック専用
+│   └── file_organizer_core.py  # File Operation Logic Only
 ├── gui/
 │   ├── __init__.py
-│   ├── language_dialog.py   # 言語選択ダイアログ専用
-│   ├── settings_window.py   # 設定ウィンドウ専用
-│   └── file_type_dialog.py  # ファイルタイプダイアログ専用
+│   ├── language_dialog.py   # Language Selection Dialog Only
+│   ├── settings_window.py   # Settings Window Only
+│   ├── file_type_dialog.py  # File Type Dialog Only
+│   └── separation_destination_dialog.py  # Separation Destination Dialog Only
 └── utils/
     ├── __init__.py
-    └── logger.py            # ログ管理専用
+    └── logger.py            # Log Management Only
 ```
 
-## 各クラスの責任
+## Responsibilities of Each Class
 
-### 1. `ConfigManager` (設定管理)
-- **責任**: アプリケーション設定の管理
-- **機能**:
-  - 設定ファイルの読み込み・保存
-  - 言語設定の管理
-  - ファイルタイプカテゴリの管理
-  - 最近使用したディレクトリの管理
+### 1. `ConfigManager` (Configuration Management)
+- **Responsibility**: Application configuration management
+- **Features**:
+  - Configuration file loading and saving
+  - Language settings management
+  - File type category management
+  - Recently used directory management
 
-### 2. `FileOrganizerCore` (ファイル操作ロジック)
-- **責任**: ファイル整理のビジネスロジック
-- **機能**:
-  - ファイルの分類
-  - ファイルの移動・整理
-  - ファイル検索
-  - ファイル分離
-  - バリデーション
+### 2. `FileOrganizerCore` (File Operation Logic)
+- **Responsibility**: File organization business logic
+- **Features**:
+  - File classification
+  - File movement and organization
+  - File search
+  - File separation
+  - Validation
 
-### 3. `Logger` (ログ管理)
-- **責任**: アプリケーションログの管理
-- **機能**:
-  - ログメッセージの記録
-  - ログの表示
-  - ログのクリア
-  - ログのエクスポート
+### 3. `Logger` (Log Management)
+- **Responsibility**: Application log management
+- **Features**:
+  - Log message recording
+  - Log display
+  - Log clearing
+  - Log export
 
-### 4. `LanguageSelectionDialog` (言語選択)
-- **責任**: 言語選択ダイアログの表示と処理
-- **機能**:
-  - 言語選択UI
-  - 言語変更の処理
+### 4. `LanguageSelectionDialog` (Language Selection)
+- **Responsibility**: Language selection dialog display and processing
+- **Features**:
+  - Language selection UI
+  - Language change processing
 
-### 5. `SettingsWindow` (設定ウィンドウ)
-- **責任**: 設定ウィンドウのUI管理
-- **機能**:
-  - 設定タブの管理
-  - 設定値の表示・編集
-  - 設定の保存
+### 5. `SettingsWindow` (Settings Window)
+- **Responsibility**: Settings window UI management
+- **Features**:
+  - Settings tab management
+  - Setting value display and editing
+  - Settings saving
 
-### 6. `FileTypeDialog` (ファイルタイプ管理)
-- **責任**: ファイルタイプの追加・編集ダイアログ
-- **機能**:
-  - カテゴリ名の入力
-  - 拡張子の入力
-  - 入力値の検証
+### 6. `FileTypeDialog` (File Type Management)
+- **Responsibility**: File type addition and editing dialog
+- **Features**:
+  - Category name input
+  - Extension input
+  - Input value validation
 
-### 7. `FileOrganizerApp` (メインアプリケーション)
-- **責任**: アプリケーション全体の調整
-- **機能**:
-  - 各コンポーネントの初期化
-  - UIの構築
-  - コンポーネント間の連携
+### 7. `SeparationDestinationDialog` (Separation Destination Selection)
+- **Responsibility**: Separation destination selection dialog
+- **Features**:
+  - Existing folder selection
+  - Direct file movement without subfolder creation
+  - Enhanced user control over separation destinations
 
-## 単一責任原則の実現
+### 8. `FileOrganizerApp` (Main Application)
+- **Responsibility**: Overall application coordination
+- **Features**:
+  - Component initialization
+  - UI construction
+  - Component coordination
 
-### 1. 責任の分離
-- 各クラスは明確に定義された単一の責任を持つ
-- 設定管理、ファイル操作、ログ管理、UI管理が完全に分離
+## Implementation of Single Responsibility Principle
 
-### 2. 依存関係の明確化
-- 各クラスは必要な依存関係のみを持つ
-- 循環依存を避けた設計
+### 1. Responsibility Separation
+- Each class has a clearly defined single responsibility
+- Configuration management, file operations, log management, and UI management are completely separated
 
-### 3. テスタビリティの向上
-- 各クラスを個別にテスト可能
-- モックやスタブの作成が容易
+### 2. Dependency Clarification
+- Each class only has necessary dependencies
+- Design avoids circular dependencies
 
-### 4. 保守性の向上
-- 機能の追加・変更が特定のクラスに限定される
-- バグの影響範囲が明確
+### 3. Improved Testability
+- Each class can be tested individually
+- Easy to create mocks and stubs
 
-### 5. 再利用性の向上
-- 各クラスは他のプロジェクトでも再利用可能
-- 依存関係が明確で移植しやすい
+### 4. Improved Maintainability
+- Feature additions and changes are limited to specific classes
+- Clear scope of bug impact
 
-## 使用方法
+### 5. Improved Reusability
+- Each class can be reused in other projects
+- Clear dependencies make porting easier
 
-### 1. 新しいアプリケーションの実行
+## Usage
+
+### 1. Running the New Refactored Application
 ```bash
 python main.py
 ```
 
-### 2. 元のアプリケーションの実行
+### 2. Running the Original Application
 ```bash
 python file_organizer.py
 ```
 
-## 利点
+## Benefits
 
-1. **保守性**: 各機能が独立しているため、修正や機能追加が容易
-2. **可読性**: コードの構造が明確で理解しやすい
-3. **テスタビリティ**: 各クラスを個別にテスト可能
-4. **拡張性**: 新しい機能の追加が既存コードに影響しない
-5. **再利用性**: 各クラスを他のプロジェクトで再利用可能
+1. **Maintainability**: Each feature is independent, making fixes and feature additions easier
+2. **Readability**: Clear code structure that is easy to understand
+3. **Testability**: Each class can be tested individually
+4. **Extensibility**: Adding new features doesn't affect existing code
+5. **Reusability**: Each class can be reused in other projects
 
-## 注意事項
+## Important Notes
 
-- 元のファイル（`file_organizer.py`）は保持されています
-- 新しいリファクタリングされたコードは`src/`ディレクトリに配置されています
-- 設定ファイルの形式は互換性を保っています
+- The original file (`file_organizer.py`) is preserved
+- The new refactored code is located in the `src/` directory
+- Configuration file format maintains compatibility
 
-## 今後の改善案
+## Future Improvements
 
-1. **依存性注入**: より柔軟な依存関係の管理
-2. **イベント駆動**: コンポーネント間の疎結合
-3. **プラグインシステム**: 機能の動的追加
-4. **設定のバリデーション**: より堅牢な設定管理
-5. **エラーハンドリング**: 統一されたエラー処理
+1. **Dependency Injection**: More flexible dependency management
+2. **Event-Driven Architecture**: Loose coupling between components
+3. **Plugin System**: Dynamic feature addition
+4. **Configuration Validation**: More robust configuration management
+5. **Error Handling**: Unified error handling
