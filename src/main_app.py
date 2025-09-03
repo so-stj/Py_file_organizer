@@ -30,6 +30,12 @@ class FileOrganizerApp:
         self.file_organizer_core = FileOrganizerCore(self.config_manager)
         self.logger = Logger()
         
+        # Initialize variables first
+        self.source_directory = tk.StringVar()
+        self.target_directory = tk.StringVar()
+        self.search_pattern = tk.StringVar()
+        self.organizing = False
+        
         # Initialize UI
         self.root = tk.Tk()
         self.root.geometry("1000x700")
@@ -114,12 +120,6 @@ class FileOrganizerApp:
         status_bar = ttk.Label(main_frame, textvariable=self.status_var, 
                               relief=tk.SUNKEN, anchor=tk.W)
         status_bar.grid(row=6, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=(10, 0))
-        
-        # Variables
-        self.source_directory = tk.StringVar()
-        self.target_directory = tk.StringVar()
-        self.search_pattern = tk.StringVar()
-        self.organizing = False
     
     def create_directory_section(self, parent):
         """Create directory selection section"""
