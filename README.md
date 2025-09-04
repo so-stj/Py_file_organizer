@@ -86,7 +86,7 @@ python file_organizer.py
 3. **Separate Files**
    - Click "Separate Matching Files" to move them to default location
    - **Custom Separation Destination**
-     - Click "分離先選択" (Select Destination) button
+     - Click Select Destination button
      - Choose an existing folder as the separation destination
      - Files are moved directly to the selected folder (no subfolder creation)
 
